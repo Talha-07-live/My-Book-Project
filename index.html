@@ -1,25 +1,98 @@
 <!DOCTYPE html>
-<html lang="bn">
+<html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>📚 বইয়ের কালেকশন</title>
-  <link rel="stylesheet" href="css/style.css">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Movie Collection</title>
+<style>
+  body { font-family:sans-serif; background:#111; color:#fff; margin:0; padding:0; }
+  h1 { text-align:center; padding:20px; }
+  #movie-grid { display:flex; flex-wrap:wrap; gap:15px; justify-content:center; padding:0 10px; }
+  .poster { width:200px; cursor:pointer; border-radius:10px; transition:0.3s; }
+  .poster:hover { transform: scale(1.05); box-shadow:0 0 15px #0af; }
+
+  .modal { display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.8); z-index:1000; }
+  .modal-content { background:#222; margin:5% auto; padding:20px; max-width:500px; border-radius:12px; text-align:center; position:relative; }
+  #close-modal { position:absolute; top:10px; right:15px; font-size:24px; cursor:pointer; }
+  .modal-content a { display:block; margin:8px 0; color:#0af; text-decoration:none; font-weight:bold; }
+  .modal-content h2 { margin-top:0; }
+  @media(max-width:600px){ .poster { width:45%; } .modal-content{ width:90%; } }
+</style>
 </head>
 <body>
-  <header>
-    <h1>📚 আমার বইয়ের কালেকশন</h1>
-  </header>
 
-  <main>
-    <div id="book-list" class="book-list"></div>
-  </main>
+<h1>Movie Collection</h1>
+<div id="movie-grid"></div>
 
-  <!-- Firebase SDK -->
-  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js"></script>
+<div id="movie-modal" class="modal">
+  <div class="modal-content">
+    <span id="close-modal">&times;</span>
+    <h2 id="modal-title"></h2>
+    <p id="modal-description"></p>
+    <p id="modal-rating"></p>
+    <a id="download1" href="" target="_blank">Download 1</a>
+    <a id="download2" href="" target="_blank">Download 2</a>
+    <a id="download3" href="" target="_blank">Download 3</a>
+  </div>
+</div>
 
-  <!-- Main Script -->
-  <script src="js/main.js"></script>
+<script type="module">
+// Firebase v9 modular import
+import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
+import { getDatabase, ref, onValue } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
+
+// Firebase config
+const firebaseConfig = {
+  apiKey: "AIzaSyDpiN0OV1aD709Q987PymfOOp_lcW6Hid8",
+  authDomain: "my-book-project-c5a17.firebaseapp.com",
+  databaseURL: "https://my-book-project-c5a17-default-rtdb.firebaseio.com",
+  projectId: "my-book-project-c5a17",
+  storageBucket: "my-book-project-c5a17.appspot.com",
+  messagingSenderId: "422603504433",
+  appId: "1:422603504433:web:e6870a7d2c57c045eb0e10",
+  measurementId: "G-F763MR7FR9"
+};
+
+// Initialize Firebase
+const app = initializeApp(firebaseConfig);
+const db = getDatabase(app);
+
+const movieGrid = document.getElementById("movie-grid");
+const modal = document.getElementById("movie-modal");
+const closeModal = document.getElementById("close-modal");
+
+const moviesRef = ref(db, 'movies');
+
+// Fetch movies
+onValue(moviesRef, snapshot => {
+  movieGrid.innerHTML = "";
+  const movies = snapshot.val();
+  if(movies){
+    Object.keys(movies).forEach(key => {
+      const movie = movies[key];
+      const img = document.createElement("img");
+      img.src = movie.poster;
+      img.alt = movie.title;
+      img.classList.add("poster");
+      img.addEventListener("click", ()=>showModal(movie));
+      movieGrid.appendChild(img);
+    });
+  }
+});
+
+// Show modal
+function showModal(movie){
+  document.getElementById("modal-title").textContent = movie.title;
+  document.getElementById("modal-description").textContent = movie.description;
+  document.getElementById("modal-rating").textContent = movie.rating;
+  document.getElementById("download1").href = movie.download1;
+  document.getElementById("download2").href = movie.download2;
+  document.getElementById("download3").href = movie.download3;
+  modal.style.display = "block";
+}
+
+closeModal.onclick = ()=>modal.style.display="none";
+window.onclick = e=>{ if(e.target==modal) modal.style.display="none"; }
+</script>
 </body>
 </html>
