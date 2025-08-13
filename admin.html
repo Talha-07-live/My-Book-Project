@@ -1,43 +1,86 @@
 <!DOCTYPE html>
-<html lang="bn">
+<html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>এডমিন প্যানেল</title>
-  <link rel="stylesheet" href="css/style.css">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Admin Panel</title>
+<style>
+  body{font-family:sans-serif;background:#111;color:#fff;text-align:center;padding:20px;}
+  input, textarea, button{ display:block; margin:10px auto; width:80%; padding:10px; border-radius:6px; border:none; }
+  button{ background:#0af; color:#000; font-weight:bold; cursor:pointer; }
+  #movie-form{ display:none; }
+</style>
 </head>
 <body>
-  <header>
-    <h1>🔑 এডমিন প্যানেল</h1>
-  </header>
 
-  <main>
-    <section id="login-section">
-      <input type="email" id="email" placeholder="ইমেইল"><br>
-      <input type="password" id="password" placeholder="পাসওয়ার্ড"><br>
-      <button onclick="login()">লগইন</button>
-    </section>
+<h1>Admin Panel</h1>
 
-    <section id="admin-section" style="display:none;">
-      <h2>📖 নতুন বই যোগ করুন</h2>
-      <input type="text" id="title" placeholder="বইয়ের নাম"><br>
-      <input type="text" id="rating" placeholder="রেটিং (১-৫)"><br>
-      <textarea id="description" placeholder="বিবরণ"></textarea><br>
-      <input type="text" id="image" placeholder="ছবির লিংক"><br>
-      <input type="text" id="link" placeholder="PDF ডাউনলোড লিংক"><br>
-      <button onclick="addBook()">✅ যোগ করুন</button>
+<div id="login-form">
+  <input type="password" id="admin-pass" placeholder="Enter Admin Password">
+  <button id="login-btn">Login</button>
+</div>
 
-      <h2>📚 বই লিস্ট</h2>
-      <div id="book-list" class="book-list"></div>
-    </section>
-  </main>
+<div id="movie-form">
+  <input id="title" placeholder="Movie Title">
+  <input id="poster" placeholder="Poster URL">
+  <textarea id="description" placeholder="Description"></textarea>
+  <input id="rating" placeholder="Rating (e.g., 8.5/10)">
+  <input id="download1" placeholder="Download Link 1">
+  <input id="download2" placeholder="Download Link 2">
+  <input id="download3" placeholder="Download Link 3">
+  <button id="addMovie">Add Movie</button>
+</div>
 
-  <!-- Firebase SDK -->
-  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js"></script>
+<script type="module">
+// Firebase modular import
+import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
+import { getDatabase, ref, push } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
 
-  <!-- Admin Script -->
-  <script src="js/admin.js"></script>
+// Firebase config
+const firebaseConfig = {
+  apiKey: "AIzaSyDpiN0OV1aD709Q987PymfOOp_lcW6Hid8",
+  authDomain: "my-book-project-c5a17.firebaseapp.com",
+  databaseURL: "https://my-book-project-c5a17-default-rtdb.firebaseio.com",
+  projectId: "my-book-project-c5a17",
+  storageBucket: "my-book-project-c5a17.appspot.com",
+  messagingSenderId: "422603504433",
+  appId: "1:422603504433:web:e6870a7d2c57c045eb0e10",
+  measurementId: "G-F763MR7FR9"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getDatabase(app);
+
+const loginForm = document.getElementById("login-form");
+const movieForm = document.getElementById("movie-form");
+
+const ADMIN_PASS = "12345"; // Change this password
+
+document.getElementById("login-btn").onclick = () => {
+  const pass = document.getElementById("admin-pass").value;
+  if(pass === ADMIN_PASS){
+    loginForm.style.display = "none";
+    movieForm.style.display = "block";
+  }else{
+    alert("Wrong Password!");
+  }
+}
+
+document.getElementById("addMovie").onclick = () => {
+  const movie = {
+    title: document.getElementById("title").value,
+    poster: document.getElementById("poster").value,
+    description: document.getElementById("description").value,
+    rating: document.getElementById("rating").value,
+    download1: document.getElementById("download1").value,
+    download2: document.getElementById("download2").value,
+    download3: document.getElementById("download3").value
+  };
+  const moviesRef = ref(db, 'movies');
+  push(moviesRef, movie);
+  alert("Movie Added!");
+  document.querySelectorAll("input,textarea").forEach(i=>i.value="");
+}
+</script>
 </body>
 </html>
