@@ -6,7 +6,7 @@
   <title>CINEDAD • Movies & Series</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <style>
     :root{
       --bg:#0c0714;          /* deep purple background */
@@ -14,11 +14,9 @@
       --muted:#a7a4b4;       /* secondary text */
       --primary:#19d3ff;     /* cyan */
       --primary-2:#4f46e5;   /* indigo */
-      --accent:#ff4757;      /* red accent */
-      --yellow:#ffd166;      /* soft yellow */
-      --success:#33d69f;     /* green */
+      --accent:#ff6b6b;      /* ribbon */
       --radius:16px;
-      --shadow:0 8px 30px rgba(0,0,0,.35);
+      --shadow:0 10px 30px rgba(0,0,0,.35);
     }
     *{box-sizing:border-box}
     html,body{height:100%}
@@ -29,66 +27,65 @@
                   var(--bg);
       color:#fff;
     }
+    .container{max-width:1280px;margin:0 auto;padding:18px 16px}
+
     /* Header */
-    .container{max-width:1180px;margin:0 auto;padding:18px 16px}
-    .header{display:flex;align-items:center;gap:14px}
-    .logo{font-weight:800;letter-spacing:1px;font-size:32px}
+    .header{display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+    .logo{font-weight:800;letter-spacing:1px;font-size:clamp(22px,3.2vw,34px)}
     .logo span{background:linear-gradient(90deg,#ff6b6b,#feca57,#1dd1a1,#48dbfb,#5f27cd); -webkit-background-clip:text; background-clip:text; color:transparent;}
     .tld{color:#ff4d4f;font-weight:800;margin-left:4px}
-    .searchbar{margin-left:auto;display:flex;gap:10px;align-items:center}
-    .searchbar input{width:260px;max-width:60vw;background:#0d0a1a;border:1px solid #2a2348;color:#fff;padding:12px 14px;border-radius:999px;outline:none;transition:.2s}
+    .searchbar{margin-left:auto;display:flex;gap:10px;align-items:center;flex:1;justify-content:flex-end}
+    .searchbar input{width:min(540px,100%);background:#0d0a1a;border:1px solid #2a2348;color:#fff;padding:12px 14px;border-radius:999px;outline:none;transition:.2s}
     .searchbar input::placeholder{color:#7f7a95}
     .searchbar input:focus{border-color:#5b54ff; box-shadow:0 0 0 4px rgba(79,70,229,.25)}
-    .btn{border:0;border-radius:999px;padding:12px 18px;font-weight:700;cursor:pointer;background:linear-gradient(90deg,var(--primary),var(--primary-2));color:#0b0b0b}
+    .btn{border:0;border-radius:999px;padding:12px 18px;font-weight:800;cursor:pointer;background:linear-gradient(90deg,var(--primary),var(--primary-2));color:#0b0b0b}
 
-    /* Section title */
-    .section{margin-top:8px}
+    /* Section */
     .section-title{display:flex;align-items:center;gap:10px;background:#1b1530;border:1px solid #2a2348;padding:10px 14px;border-radius:12px;box-shadow:var(--shadow)}
     .section-title .flame{width:28px;height:28px;border-radius:8px;background:#1f1838;display:grid;place-items:center;}
-    .section-title h2{margin:0;font-size:18px;letter-spacing:.2px}
+    .section-title h2{margin:0;font-size:clamp(16px,2.5vw,20px);letter-spacing:.2px}
 
     /* Grid */
-    .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:18px;margin-top:16px}
+    .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:18px;margin-top:16px}
+    @media (min-width:480px){ .grid{grid-template-columns:repeat(auto-fit,minmax(200px,1fr));} }
 
     /* Card */
     .card{position:relative;border-radius:16px;overflow:hidden;background:var(--card);border:1px solid #2a2348;box-shadow:var(--shadow);transition:transform .25s ease, box-shadow .25s ease}
     .card:hover{transform:translateY(-4px) scale(1.02);box-shadow:0 14px 40px rgba(0,0,0,.45)}
     .thumb{aspect-ratio:2/3;width:100%;object-fit:cover;display:block;filter:saturate(1.05)}
-    .grad{position:absolute;inset:auto 0 0 0;height:48%;background:linear-gradient(180deg,transparent,rgba(0,0,0,.85))}
+    .grad{position:absolute;inset:auto 0 0 0;height:52%;background:linear-gradient(180deg,transparent,rgba(0,0,0,.9))}
 
-    /* Ribbons */
+    /* Ribbons & badges */
     .ribbon{position:absolute;top:10px;left:10px;background:linear-gradient(90deg,#ff6b6b,#f06595);color:#fff;font-weight:800;padding:6px 10px;border-radius:8px;box-shadow:0 6px 18px rgba(0,0,0,.35);font-size:12px;letter-spacing:.4px}
     .badge{position:absolute;bottom:12px;right:12px;background:#1b1530;border:1px solid #2a2348;padding:6px 8px;border-radius:8px;color:#d6d2e6;font-weight:700;font-size:12px}
     .age{position:absolute;bottom:12px;left:12px;display:flex;align-items:center;gap:6px;background:rgba(0,0,0,.45);backdrop-filter:blur(6px);padding:6px 10px;border-radius:999px;font-size:12px}
 
     /* Meta */
     .meta{padding:10px 12px 14px}
-    .title{font-weight:700;font-size:15px;line-height:1.35;margin:0 0 6px 0;color:#faf8ff}
-    .subtitle{margin:0;color:var(--muted);font-size:12px}
+    .title{font-weight:800;font-size:clamp(14px,2.4vw,16px);line-height:1.35;margin:0 0 6px 0;color:#faf8ff}
+    .subtitle{margin:0;color:var(--muted);font-size:clamp(11px,2vw,12px)}
 
     /* Modal */
-    .modal{position:fixed;inset:0;background:rgba(0,0,0,.75);display:none;align-items:center;justify-content:center;padding:20px;z-index:99}
+    .modal{position:fixed;inset:0;background:rgba(0,0,0,.75);display:none;align-items:center;justify-content:center;padding:16px;z-index:99}
     .modal.show{display:flex;animation:fade .2s ease}
     @keyframes fade{from{opacity:0}to{opacity:1}}
-    .sheet{width:min(860px,96vw);background:#140f26;border:1px solid #302a55;border-radius:20px;overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,.55)}
-    .sheet-head{display:grid;grid-template-columns:180px 1fr;gap:16px;padding:16px}
+    .sheet{width:min(980px,100%);background:#140f26;border:1px solid #302a55;border-radius:20px;overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,.55)}
+    .sheet-head{display:grid;grid-template-columns:140px 1fr;gap:14px;padding:14px}
+    @media (min-width:720px){ .sheet-head{grid-template-columns:200px 1fr;gap:16px;padding:16px} }
     .sheet-head img{width:100%;border-radius:14px;border:1px solid #2a2348}
-    .sheet-head .info h3{margin:0 0 8px 0;font-size:22px}
+    .sheet-head .info h3{margin:0 0 8px 0;font-size:clamp(18px,3vw,24px)}
     .sheet-head .info p{margin:6px 0;color:#d5d1e6}
-    .rating{display:inline-flex;align-items:center;gap:6px;background:rgba(255,255,255,.06);padding:6px 10px;border-radius:999px;font-weight:700}
+    .rating{display:inline-flex;align-items:center;gap:6px;background:rgba(255,255,255,.06);padding:6px 10px;border-radius:999px;font-weight:800}
 
-    .links{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:10px;padding:12px 16px 20px;background:#0e0b1a;border-top:1px solid #2a2348}
+    .links{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:10px;padding:12px 16px 18px;background:#0e0b1a;border-top:1px solid #2a2348;max-height:50vh;overflow:auto}
     .d-btn{display:flex;align-items:center;justify-content:center;gap:8px;text-decoration:none;color:#0b0b0b;background:linear-gradient(90deg,var(--primary),var(--primary-2));padding:12px 14px;border-radius:12px;font-weight:800;transition:transform .2s ease}
     .d-btn:hover{transform:translateY(-2px) scale(1.02)}
     .close{position:absolute;top:14px;right:16px;border:0;background:#1b1530;border:1px solid #2a2348;color:#fff;padding:8px 12px;border-radius:999px;cursor:pointer}
 
     /* Skeletons */
-    .skeleton{position:relative;overflow:hidden;background:#1a1530;border-radius:16px;border:1px solid #2a2348}
+    .skeleton{position:relative;overflow:hidden;background:#1a1530;border-radius:16px;border:1px solid #2a2348;aspect-ratio:2/3}
     .skeleton::after{content:"";position:absolute;inset:0;background:linear-gradient(90deg,transparent,rgba(255,255,255,.06),transparent);transform:translateX(-100%);animation:shimmer 1.4s infinite}
     @keyframes shimmer{to{transform:translateX(100%)}}
-
-    /* Utilities */
-    .hidden{display:none}
   </style>
 </head>
 <body>
@@ -106,9 +103,7 @@
       <h2>Latest Movie & Series</h2>
     </div>
 
-    <div id="grid" class="grid">
-      <!-- Skeleton placeholders -->
-    </div>
+    <div id="grid" class="grid"></div>
   </main>
 
   <!-- Modal -->
@@ -128,7 +123,6 @@
   </div>
 
   <script type="module">
-    // Firebase v9 (modular)
     import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
     import { getDatabase, ref, onValue } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
 
@@ -150,19 +144,13 @@
     const searchInput = document.getElementById('search');
     const searchBtn = document.getElementById('searchBtn');
 
-    // Build n skeletons first
-    const makeSkeletons = (n=8)=>{
+    // skeletons
+    const makeSkeletons = (n=10)=>{
       grid.innerHTML = '';
-      for(let i=0;i<n;i++){
-        const s = document.createElement('div');
-        s.className = 'skeleton';
-        s.style.aspectRatio='2/3';
-        grid.appendChild(s);
-      }
+      for(let i=0;i<n;i++) grid.appendChild(Object.assign(document.createElement('div'),{className:'skeleton'}));
     };
     makeSkeletons();
 
-    // Utilities
     const daysAgo = ts => {
       if(!ts) return '';
       const diff = Math.max(0, Date.now() - ts);
@@ -172,15 +160,12 @@
       return `${d} days ago`;
     };
 
-    // State
     let allMovies = [];
     let filtered = [];
 
-    // Fetch realtime movies
     onValue(ref(db,'movies'), snap => {
       const val = snap.val() || {};
       allMovies = Object.entries(val).map(([id, m])=>({ id, ...m }));
-      // sort newest first (by releasedAt fallback to push order)
       allMovies.sort((a,b)=> (b.releasedAt||0) - (a.releasedAt||0));
       filtered = allMovies;
       render();
@@ -190,7 +175,7 @@
       grid.innerHTML = '';
       if(!filtered.length){
         const empty = document.createElement('p');
-        empty.style.color='var(--muted)';
+        empty.style.color='#a7a4b4';
         empty.style.gridColumn='1 / -1';
         empty.textContent = 'No movies found.';
         grid.appendChild(empty);
@@ -210,24 +195,20 @@
         const grad = document.createElement('div');
         grad.className = 'grad';
 
-        // ribbons
-        if((m.tags && m.tags.includes('TRENDING')) || m.trending){
+        if((m.tags && Array.isArray(m.tags) && m.tags.includes('TRENDING')) || m.trending){
           const ribbon = document.createElement('div');
           ribbon.className='ribbon';
           ribbon.textContent='TRENDING';
           card.appendChild(ribbon);
         }
-        // HD badge / quality
         const badge = document.createElement('div');
         badge.className='badge';
         badge.textContent = (m.quality || 'HD').toUpperCase();
 
-        // age pill
         const age = document.createElement('div');
         age.className='age';
         age.textContent = daysAgo(m.releasedAt) || (m.releasedAtText || '');
 
-        // meta
         const meta = document.createElement('div');
         meta.className='meta';
         const t = document.createElement('p'); t.className='title'; t.textContent = m.title || 'Untitled';
@@ -245,7 +226,6 @@
       }
     };
 
-    // Search (title + subtitle)
     const doSearch = () => {
       const q = searchInput.value.trim().toLowerCase();
       if(!q) { filtered = allMovies; render(); return; }
@@ -257,7 +237,6 @@
     searchBtn.addEventListener('click', doSearch);
     searchInput.addEventListener('keydown', (e)=>{ if(e.key==='Enter') doSearch(); });
 
-    // Modal
     const modal = document.getElementById('modal');
     const mPoster = document.getElementById('m-poster');
     const mTitle = document.getElementById('m-title');
@@ -277,20 +256,19 @@
       const links = Array.isArray(m.downloadLinks) ? m.downloadLinks : [];
       if(!links.length){
         const d = document.createElement('div');
-        d.style.color='var(--muted)';
+        d.style.color='#a7a4b4';
         d.textContent = 'No download links available.';
         mLinks.appendChild(d);
       } else {
-        links.forEach((url, i)=>{
-          if(!url) return;
+        links.forEach((obj)=>{
+          if(!obj || !obj.url) return;
           const a = document.createElement('a');
-          a.href = url; a.target='_blank'; a.rel='noopener';
+          a.href = obj.url; a.target='_blank'; a.rel='noopener';
           a.className = 'd-btn';
-          a.textContent = `Download ${i+1}`;
+          a.textContent = (obj.text || 'Download');
           mLinks.appendChild(a);
         });
       }
-
       modal.classList.add('show');
     }
   </script>
