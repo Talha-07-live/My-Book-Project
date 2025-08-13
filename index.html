@@ -8,15 +8,40 @@
   body { font-family:sans-serif; background:#111; color:#fff; margin:0; padding:0; }
   h1 { text-align:center; padding:20px; }
   #movie-grid { display:flex; flex-wrap:wrap; gap:15px; justify-content:center; padding:0 10px; }
-  .poster { width:200px; cursor:pointer; border-radius:10px; transition:0.3s; }
-  .poster:hover { transform: scale(1.05); box-shadow:0 0 15px #0af; }
+  
+  .poster-card {
+    position:relative;
+    width:200px;
+    border-radius:12px;
+    overflow:hidden;
+    cursor:pointer;
+    transition: transform 0.3s, box-shadow 0.3s;
+  }
+  .poster-card:hover {
+    transform: scale(1.05);
+    box-shadow: 0 0 20px #0af;
+  }
+  .poster-card img {
+    width:100%;
+    display:block;
+  }
+  .poster-gradient {
+    position:absolute;
+    bottom:0;
+    width:100%;
+    height:50%;
+    background: linear-gradient(transparent, rgba(0,0,0,0.9));
+  }
 
-  .modal { display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.8); z-index:1000; }
-  .modal-content { background:#222; margin:5% auto; padding:20px; max-width:500px; border-radius:12px; text-align:center; position:relative; }
+  .modal { display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.85); z-index:1000; opacity:0; transition:opacity 0.3s ease; }
+  .modal.show { display:block; opacity:1; }
+  .modal-content { background:#222; margin:5% auto; padding:20px; max-width:500px; border-radius:12px; text-align:center; position:relative; animation:fadeIn 0.3s; }
   #close-modal { position:absolute; top:10px; right:15px; font-size:24px; cursor:pointer; }
-  .modal-content a { display:block; margin:8px 0; color:#0af; text-decoration:none; font-weight:bold; }
-  .modal-content h2 { margin-top:0; }
-  @media(max-width:600px){ .poster { width:45%; } .modal-content{ width:90%; } }
+  .download-link { display:block; margin:8px 0; color:#fff; text-decoration:none; font-weight:bold; padding:10px; border-radius:6px; background: linear-gradient(90deg,#0af,#06f); transition: 0.3s; }
+  .download-link:hover { background: linear-gradient(90deg,#06f,#0af); }
+
+  @keyframes fadeIn { from {opacity:0; transform:scale(0.95);} to {opacity:1; transform:scale(1);} }
+  @media(max-width:600px){ .poster-card { width:45%; } .modal-content{ width:90%; } }
 </style>
 </head>
 <body>
@@ -30,69 +55,78 @@
     <h2 id="modal-title"></h2>
     <p id="modal-description"></p>
     <p id="modal-rating"></p>
-    <a id="download1" href="" target="_blank">Download 1</a>
-    <a id="download2" href="" target="_blank">Download 2</a>
-    <a id="download3" href="" target="_blank">Download 3</a>
+    <div id="download-links"></div>
   </div>
 </div>
 
 <script type="module">
-// Firebase v9 modular import
 import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
 import { getDatabase, ref, onValue } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
 
-// Firebase config
 const firebaseConfig = {
   apiKey: "AIzaSyDpiN0OV1aD709Q987PymfOOp_lcW6Hid8",
   authDomain: "my-book-project-c5a17.firebaseapp.com",
-  databaseURL: "https://my-book-project-c5a17-default-rtdb.firebaseio.com",
+  databaseURL: "https://my-book-project-c5a17-default-rtdb.asia-southeast1.firebasedatabase.app",
   projectId: "my-book-project-c5a17",
-  storageBucket: "https://my-book-project-c5a17-default-rtdb.asia-southeast1.firebasedatabase.app",
+  storageBucket: "my-book-project-c5a17.appspot.com",
   messagingSenderId: "422603504433",
   appId: "1:422603504433:web:e6870a7d2c57c045eb0e10",
   measurementId: "G-F763MR7FR9"
 };
 
-// Initialize Firebase
 const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
 
 const movieGrid = document.getElementById("movie-grid");
 const modal = document.getElementById("movie-modal");
 const closeModal = document.getElementById("close-modal");
+const downloadLinksContainer = document.getElementById("download-links");
 
 const moviesRef = ref(db, 'movies');
 
-// Fetch movies
 onValue(moviesRef, snapshot => {
   movieGrid.innerHTML = "";
   const movies = snapshot.val();
   if(movies){
     Object.keys(movies).forEach(key => {
       const movie = movies[key];
+      const card = document.createElement("div");
+      card.classList.add("poster-card");
       const img = document.createElement("img");
       img.src = movie.poster;
       img.alt = movie.title;
-      img.classList.add("poster");
-      img.addEventListener("click", ()=>showModal(movie));
-      movieGrid.appendChild(img);
+      const gradient = document.createElement("div");
+      gradient.classList.add("poster-gradient");
+      card.appendChild(img);
+      card.appendChild(gradient);
+      card.addEventListener("click", ()=>showModal(movie));
+      movieGrid.appendChild(card);
     });
   }
 });
 
-// Show modal
 function showModal(movie){
   document.getElementById("modal-title").textContent = movie.title;
   document.getElementById("modal-description").textContent = movie.description;
   document.getElementById("modal-rating").textContent = movie.rating;
-  document.getElementById("download1").href = movie.download1;
-  document.getElementById("download2").href = movie.download2;
-  document.getElementById("download3").href = movie.download3;
-  modal.style.display = "block";
+
+  downloadLinksContainer.innerHTML = "";
+  if(movie.downloadLinks && movie.downloadLinks.length > 0){
+    movie.downloadLinks.forEach(link => {
+      const a = document.createElement("a");
+      a.href = link;
+      a.target="_blank";
+      a.classList.add("download-link");
+      a.textContent = "Download";
+      downloadLinksContainer.appendChild(a);
+    });
+  }
+
+  modal.classList.add("show");
 }
 
-closeModal.onclick = ()=>modal.style.display="none";
-window.onclick = e=>{ if(e.target==modal) modal.style.display="none"; }
+closeModal.onclick = ()=>modal.classList.remove("show");
+window.onclick = e=>{ if(e.target==modal) modal.classList.remove("show"); }
 </script>
 </body>
 </html>
