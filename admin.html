@@ -9,6 +9,8 @@
   input, textarea, button{ display:block; margin:10px auto; width:80%; padding:10px; border-radius:6px; border:none; }
   button{ background:#0af; color:#000; font-weight:bold; cursor:pointer; }
   #movie-form{ display:none; }
+  .link-input { width:70%; display:inline-block; margin:5px; }
+  .remove-link { display:inline-block; cursor:pointer; color:#f00; margin-left:5px; }
 </style>
 </head>
 <body>
@@ -25,22 +27,25 @@
   <input id="poster" placeholder="Poster URL">
   <textarea id="description" placeholder="Description"></textarea>
   <input id="rating" placeholder="Rating (e.g., 8.5/10)">
-  <input id="download1" placeholder="Download Link 1">
-  <input id="download2" placeholder="Download Link 2">
-  <input id="download3" placeholder="Download Link 3">
+
+  <div id="links-container">
+    <div class="link-item">
+      <input class="link-input" placeholder="Download Link">
+      <span class="remove-link" onclick="this.parentNode.remove()">×</span>
+    </div>
+  </div>
+  <button id="addLink">Add Link</button>
   <button id="addMovie">Add Movie</button>
 </div>
 
 <script type="module">
-// Firebase modular import
 import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
 import { getDatabase, ref, push } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
 
-// Firebase config
 const firebaseConfig = {
   apiKey: "AIzaSyDpiN0OV1aD709Q987PymfOOp_lcW6Hid8",
   authDomain: "my-book-project-c5a17.firebaseapp.com",
-  databaseURL: "https://my-book-project-c5a17-default-rtdb.firebaseio.com",
+  databaseURL: "https://my-book-project-c5a17-default-rtdb.asia-southeast1.firebasedatabase.app",
   projectId: "my-book-project-c5a17",
   storageBucket: "my-book-project-c5a17.appspot.com",
   messagingSenderId: "422603504433",
@@ -66,20 +71,45 @@ document.getElementById("login-btn").onclick = () => {
   }
 }
 
+// Add new link input
+document.getElementById("addLink").onclick = () => {
+  const container = document.getElementById("links-container");
+  const div = document.createElement("div");
+  div.classList.add("link-item");
+  div.innerHTML = `<input class="link-input" placeholder="Download Link"><span class="remove-link" onclick="this.parentNode.remove()">×</span>`;
+  container.appendChild(div);
+}
+
+// Add movie to Firebase
 document.getElementById("addMovie").onclick = () => {
-  const movie = {
-    title: document.getElementById("title").value,
-    poster: document.getElementById("poster").value,
-    description: document.getElementById("description").value,
-    rating: document.getElementById("rating").value,
-    download1: document.getElementById("download1").value,
-    download2: document.getElementById("download2").value,
-    download3: document.getElementById("download3").value
-  };
-  const moviesRef = ref(db, 'movies');
-  push(moviesRef, movie);
+  const title = document.getElementById("title").value;
+  const poster = document.getElementById("poster").value;
+  const description = document.getElementById("description").value;
+  const rating = document.getElementById("rating").value;
+
+  const linkInputs = document.querySelectorAll(".link-input");
+  const downloadLinks = [];
+  linkInputs.forEach(input => {
+    if(input.value.trim() !== "") downloadLinks.push(input.value.trim());
+  });
+
+  if(!title || !poster || !description || downloadLinks.length === 0){
+    alert("Please fill Title, Poster, Description, and at least one Download Link!");
+    return;
+  }
+
+  const movie = { title, poster, description, rating, downloadLinks };
+  push(ref(db, 'movies'), movie);
   alert("Movie Added!");
-  document.querySelectorAll("input,textarea").forEach(i=>i.value="");
+
+  document.getElementById("title").value = "";
+  document.getElementById("poster").value = "";
+  document.getElementById("description").value = "";
+  document.getElementById("rating").value = "";
+  document.getElementById("links-container").innerHTML = `<div class="link-item">
+      <input class="link-input" placeholder="Download Link">
+      <span class="remove-link" onclick="this.parentNode.remove()">×</span>
+    </div>`;
 }
 </script>
 </body>
