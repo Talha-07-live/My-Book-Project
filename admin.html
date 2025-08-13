@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>এডমিন প্যানেল</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <header>
+    <h1>🔑 এডমিন প্যানেল</h1>
+  </header>
+
+  <main>
+    <section id="login-section">
+      <input type="email" id="email" placeholder="ইমেইল"><br>
+      <input type="password" id="password" placeholder="পাসওয়ার্ড"><br>
+      <button onclick="login()">লগইন</button>
+    </section>
+
+    <section id="admin-section" style="display:none;">
+      <h2>📖 নতুন বই যোগ করুন</h2>
+      <input type="text" id="title" placeholder="বইয়ের নাম"><br>
+      <input type="text" id="rating" placeholder="রেটিং (১-৫)"><br>
+      <textarea id="description" placeholder="বিবরণ"></textarea><br>
+      <input type="text" id="image" placeholder="ছবির লিংক"><br>
+      <input type="text" id="link" placeholder="PDF ডাউনলোড লিংক"><br>
+      <button onclick="addBook()">✅ যোগ করুন</button>
+
+      <h2>📚 বই লিস্ট</h2>
+      <div id="book-list" class="book-list"></div>
+    </section>
+  </main>
+
+  <!-- Firebase SDK -->
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js"></script>
+
+  <!-- Admin Script -->
+  <script src="js/admin.js"></script>
+</body>
+</html>
