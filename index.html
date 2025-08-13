@@ -44,23 +44,8 @@
     .section-title{display:flex;align-items:center;gap:10px;background:#1b1530;border:1px solid #2a2348;padding:10px 14px;border-radius:12px;box-shadow:var(--shadow)}
     .section-title .flame{width:28px;height:28px;border-radius:8px;background:#1f1838;display:grid;place-items:center;}
     .section-title h2{margin:0;font-size:clamp(16px,2.5vw,20px);letter-spacing:.2px}
-
-    /* Request Button */
-    .request-btn {
-      margin-left:auto;
-      padding:8px 14px;
-      background: linear-gradient(90deg,#ff6b6b,#f06595);
-      color:#fff;
-      font-weight:700;
-      border-radius:12px;
-      text-decoration:none;
-      font-size:clamp(12px,1.2vw,14px);
-      box-shadow:0 6px 18px rgba(0,0,0,.35);
-      transition: transform .2s ease;
-    }
-    .request-btn:hover {
-      transform: translateY(-2px) scale(1.03);
-    }
+    .request-btn{margin-left:auto;padding:6px 12px;border-radius:12px;background:linear-gradient(90deg,#ff6b6b,#f06595);color:#fff;font-weight:600;text-decoration:none;font-size:13px;transition:.2s}
+    .request-btn:hover{opacity:.85}
 
     /* Grid */
     .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:18px;margin-top:16px}
@@ -115,7 +100,6 @@
   </header>
 
   <main class="container section">
-    <!-- Section Title + Request Button -->
     <div class="section-title">
       <div class="flame">🔥</div>
       <h2>Latest Movie & Series</h2>
@@ -283,10 +267,9 @@
         links.forEach((obj)=>{
           if(!obj || !obj.url) return;
           const a = document.createElement('a');
-          a.href=obj.url;
-          a.target='_blank';
+          a.href = obj.url; a.target='_blank'; a.rel='noopener';
           a.className='d-btn';
-          a.textContent=obj.label || 'Download';
+          a.textContent=obj.text || 'Download';
           mLinks.appendChild(a);
         });
       }
