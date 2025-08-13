@@ -1,166 +1,298 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Movie Collection</title>
-<style>
-body { font-family: 'Segoe UI', sans-serif; background:#111; color:#fff; margin:0; padding:0; }
-h1 { text-align:center; padding:20px; font-size:2em; letter-spacing:1px; }
-#movie-grid { display:grid; grid-template-columns: repeat(auto-fit, minmax(200px,1fr)); gap:20px; padding:20px; justify-items:center; }
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CINEDAD • Movies & Series</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root{
+      --bg:#0c0714;          /* deep purple background */
+      --card:#161129;        /* card surface */
+      --muted:#a7a4b4;       /* secondary text */
+      --primary:#19d3ff;     /* cyan */
+      --primary-2:#4f46e5;   /* indigo */
+      --accent:#ff4757;      /* red accent */
+      --yellow:#ffd166;      /* soft yellow */
+      --success:#33d69f;     /* green */
+      --radius:16px;
+      --shadow:0 8px 30px rgba(0,0,0,.35);
+    }
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{
+      margin:0; font-family:Poppins, system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+      background: radial-gradient(1000px 600px at -10% -10%, #201a35 0%, transparent 60%),
+                  radial-gradient(800px 500px at 120% 0%, #1b1530 0%, transparent 60%),
+                  var(--bg);
+      color:#fff;
+    }
+    /* Header */
+    .container{max-width:1180px;margin:0 auto;padding:18px 16px}
+    .header{display:flex;align-items:center;gap:14px}
+    .logo{font-weight:800;letter-spacing:1px;font-size:32px}
+    .logo span{background:linear-gradient(90deg,#ff6b6b,#feca57,#1dd1a1,#48dbfb,#5f27cd); -webkit-background-clip:text; background-clip:text; color:transparent;}
+    .tld{color:#ff4d4f;font-weight:800;margin-left:4px}
+    .searchbar{margin-left:auto;display:flex;gap:10px;align-items:center}
+    .searchbar input{width:260px;max-width:60vw;background:#0d0a1a;border:1px solid #2a2348;color:#fff;padding:12px 14px;border-radius:999px;outline:none;transition:.2s}
+    .searchbar input::placeholder{color:#7f7a95}
+    .searchbar input:focus{border-color:#5b54ff; box-shadow:0 0 0 4px rgba(79,70,229,.25)}
+    .btn{border:0;border-radius:999px;padding:12px 18px;font-weight:700;cursor:pointer;background:linear-gradient(90deg,var(--primary),var(--primary-2));color:#0b0b0b}
 
-.poster-card {
-  position:relative;
-  width:100%;
-  border-radius:12px;
-  overflow:hidden;
-  cursor:pointer;
-  transition: transform 0.3s, box-shadow 0.3s;
-}
-.poster-card:hover {
-  transform: scale(1.05);
-  box-shadow: 0 0 20px #0af;
-}
-.poster-card img {
-  width:100%;
-  display:block;
-}
-.poster-gradient {
-  position:absolute;
-  bottom:0;
-  width:100%;
-  height:50%;
-  background: linear-gradient(transparent, rgba(0,0,0,0.9));
-  pointer-events:none;
-}
+    /* Section title */
+    .section{margin-top:8px}
+    .section-title{display:flex;align-items:center;gap:10px;background:#1b1530;border:1px solid #2a2348;padding:10px 14px;border-radius:12px;box-shadow:var(--shadow)}
+    .section-title .flame{width:28px;height:28px;border-radius:8px;background:#1f1838;display:grid;place-items:center;}
+    .section-title h2{margin:0;font-size:18px;letter-spacing:.2px}
 
-.modal {
-  display:none;
-  position:fixed;
-  top:0; left:0;
-  width:100%; height:100%;
-  background:rgba(0,0,0,0.85);
-  z-index:1000;
-  opacity:0;
-  transition:opacity 0.3s ease;
-}
-.modal.show { display:block; opacity:1; }
+    /* Grid */
+    .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:18px;margin-top:16px}
 
-.modal-content {
-  background:#222;
-  margin:5% auto;
-  padding:25px;
-  max-width:550px;
-  border-radius:15px;
-  text-align:center;
-  position:relative;
-  animation:fadeIn 0.3s ease forwards;
-}
-@keyframes fadeIn { from{opacity:0; transform:scale(0.95);} to{opacity:1; transform:scale(1);} }
+    /* Card */
+    .card{position:relative;border-radius:16px;overflow:hidden;background:var(--card);border:1px solid #2a2348;box-shadow:var(--shadow);transition:transform .25s ease, box-shadow .25s ease}
+    .card:hover{transform:translateY(-4px) scale(1.02);box-shadow:0 14px 40px rgba(0,0,0,.45)}
+    .thumb{aspect-ratio:2/3;width:100%;object-fit:cover;display:block;filter:saturate(1.05)}
+    .grad{position:absolute;inset:auto 0 0 0;height:48%;background:linear-gradient(180deg,transparent,rgba(0,0,0,.85))}
 
-#close-modal { position:absolute; top:12px; right:18px; font-size:26px; cursor:pointer; }
+    /* Ribbons */
+    .ribbon{position:absolute;top:10px;left:10px;background:linear-gradient(90deg,#ff6b6b,#f06595);color:#fff;font-weight:800;padding:6px 10px;border-radius:8px;box-shadow:0 6px 18px rgba(0,0,0,.35);font-size:12px;letter-spacing:.4px}
+    .badge{position:absolute;bottom:12px;right:12px;background:#1b1530;border:1px solid #2a2348;padding:6px 8px;border-radius:8px;color:#d6d2e6;font-weight:700;font-size:12px}
+    .age{position:absolute;bottom:12px;left:12px;display:flex;align-items:center;gap:6px;background:rgba(0,0,0,.45);backdrop-filter:blur(6px);padding:6px 10px;border-radius:999px;font-size:12px}
 
-.modal-content h2 { margin-top:0; font-size:1.8em; }
-.modal-content p { margin:10px 0; }
+    /* Meta */
+    .meta{padding:10px 12px 14px}
+    .title{font-weight:700;font-size:15px;line-height:1.35;margin:0 0 6px 0;color:#faf8ff}
+    .subtitle{margin:0;color:var(--muted);font-size:12px}
 
-#download-links { display:flex; flex-direction:column; gap:10px; margin-top:15px; }
-.download-link {
-  display:block;
-  color:#fff;
-  text-decoration:none;
-  font-weight:bold;
-  padding:12px 15px;
-  border-radius:8px;
-  background: linear-gradient(90deg,#0af,#06f);
-  transition:0.3s;
-}
-.download-link:hover { background: linear-gradient(90deg,#06f,#0af); transform:scale(1.05); }
+    /* Modal */
+    .modal{position:fixed;inset:0;background:rgba(0,0,0,.75);display:none;align-items:center;justify-content:center;padding:20px;z-index:99}
+    .modal.show{display:flex;animation:fade .2s ease}
+    @keyframes fade{from{opacity:0}to{opacity:1}}
+    .sheet{width:min(860px,96vw);background:#140f26;border:1px solid #302a55;border-radius:20px;overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,.55)}
+    .sheet-head{display:grid;grid-template-columns:180px 1fr;gap:16px;padding:16px}
+    .sheet-head img{width:100%;border-radius:14px;border:1px solid #2a2348}
+    .sheet-head .info h3{margin:0 0 8px 0;font-size:22px}
+    .sheet-head .info p{margin:6px 0;color:#d5d1e6}
+    .rating{display:inline-flex;align-items:center;gap:6px;background:rgba(255,255,255,.06);padding:6px 10px;border-radius:999px;font-weight:700}
 
-@media(max-width:600px){ .poster-card{width:90%;} .modal-content{width:90%; padding:20px;} }
-</style>
+    .links{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:10px;padding:12px 16px 20px;background:#0e0b1a;border-top:1px solid #2a2348}
+    .d-btn{display:flex;align-items:center;justify-content:center;gap:8px;text-decoration:none;color:#0b0b0b;background:linear-gradient(90deg,var(--primary),var(--primary-2));padding:12px 14px;border-radius:12px;font-weight:800;transition:transform .2s ease}
+    .d-btn:hover{transform:translateY(-2px) scale(1.02)}
+    .close{position:absolute;top:14px;right:16px;border:0;background:#1b1530;border:1px solid #2a2348;color:#fff;padding:8px 12px;border-radius:999px;cursor:pointer}
+
+    /* Skeletons */
+    .skeleton{position:relative;overflow:hidden;background:#1a1530;border-radius:16px;border:1px solid #2a2348}
+    .skeleton::after{content:"";position:absolute;inset:0;background:linear-gradient(90deg,transparent,rgba(255,255,255,.06),transparent);transform:translateX(-100%);animation:shimmer 1.4s infinite}
+    @keyframes shimmer{to{transform:translateX(100%)}}
+
+    /* Utilities */
+    .hidden{display:none}
+  </style>
 </head>
 <body>
+  <header class="container header">
+    <div class="logo"><span>CINEDAD</span><span class="tld">.SITE</span></div>
+    <div class="searchbar">
+      <input id="search" type="search" placeholder="Search …" aria-label="Search" />
+      <button class="btn" id="searchBtn">SEARCH</button>
+    </div>
+  </header>
 
-<h1>Movie Collection</h1>
-<div id="movie-grid"></div>
+  <main class="container section">
+    <div class="section-title">
+      <div class="flame">🔥</div>
+      <h2>Latest Movie & Series</h2>
+    </div>
 
-<div id="movie-modal" class="modal">
-  <div class="modal-content">
-    <span id="close-modal">&times;</span>
-    <h2 id="modal-title"></h2>
-    <p id="modal-description"></p>
-    <p id="modal-rating"></p>
-    <div id="download-links"></div>
+    <div id="grid" class="grid">
+      <!-- Skeleton placeholders -->
+    </div>
+  </main>
+
+  <!-- Modal -->
+  <div id="modal" class="modal" role="dialog" aria-modal="true" aria-labelledby="m-title">
+    <div class="sheet">
+      <button class="close" id="close">Close ✕</button>
+      <div class="sheet-head">
+        <img id="m-poster" alt="Poster" />
+        <div class="info">
+          <h3 id="m-title"></h3>
+          <p id="m-desc"></p>
+          <p class="rating">⭐ <span id="m-rating">—</span></p>
+        </div>
+      </div>
+      <div id="m-links" class="links"></div>
+    </div>
   </div>
-</div>
 
-<script type="module">
-import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
-import { getDatabase, ref, onValue } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
+  <script type="module">
+    // Firebase v9 (modular)
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
+    import { getDatabase, ref, onValue } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
 
-const firebaseConfig = {
-  apiKey: "AIzaSyDpiN0OV1aD709Q987PymfOOp_lcW6Hid8",
-  authDomain: "my-book-project-c5a17.firebaseapp.com",
-  databaseURL: "https://my-book-project-c5a17-default-rtdb.asia-southeast1.firebasedatabase.app",
-  projectId: "my-book-project-c5a17",
-  storageBucket: "my-book-project-c5a17.appspot.com",
-  messagingSenderId: "422603504433",
-  appId: "1:422603504433:web:e6870a7d2c57c045eb0e10",
-  measurementId: "G-F763MR7FR9"
-};
+    const firebaseConfig = {
+      apiKey: "AIzaSyDpiN0OV1aD709Q987PymfOOp_lcW6Hid8",
+      authDomain: "my-book-project-c5a17.firebaseapp.com",
+      databaseURL: "https://my-book-project-c5a17-default-rtdb.asia-southeast1.firebasedatabase.app",
+      projectId: "my-book-project-c5a17",
+      storageBucket: "my-book-project-c5a17.appspot.com",
+      messagingSenderId: "422603504433",
+      appId: "1:422603504433:web:e6870a7d2c57c045eb0e10",
+      measurementId: "G-F763MR7FR9"
+    };
 
-const app = initializeApp(firebaseConfig);
-const db = getDatabase(app);
+    const app = initializeApp(firebaseConfig);
+    const db = getDatabase(app);
 
-const movieGrid = document.getElementById("movie-grid");
-const modal = document.getElementById("movie-modal");
-const closeModal = document.getElementById("close-modal");
-const downloadLinksContainer = document.getElementById("download-links");
+    const grid = document.getElementById('grid');
+    const searchInput = document.getElementById('search');
+    const searchBtn = document.getElementById('searchBtn');
 
-const moviesRef = ref(db, 'movies');
+    // Build n skeletons first
+    const makeSkeletons = (n=8)=>{
+      grid.innerHTML = '';
+      for(let i=0;i<n;i++){
+        const s = document.createElement('div');
+        s.className = 'skeleton';
+        s.style.aspectRatio='2/3';
+        grid.appendChild(s);
+      }
+    };
+    makeSkeletons();
 
-onValue(moviesRef, snapshot => {
-  movieGrid.innerHTML = "";
-  const movies = snapshot.val();
-  if(movies){
-    Object.keys(movies).forEach(key => {
-      const movie = movies[key];
-      const card = document.createElement("div");
-      card.classList.add("poster-card");
-      const img = document.createElement("img");
-      img.src = movie.poster;
-      img.alt = movie.title;
-      const gradient = document.createElement("div");
-      gradient.classList.add("poster-gradient");
-      card.appendChild(img);
-      card.appendChild(gradient);
-      card.addEventListener("click", ()=>showModal(movie));
-      movieGrid.appendChild(card);
+    // Utilities
+    const daysAgo = ts => {
+      if(!ts) return '';
+      const diff = Math.max(0, Date.now() - ts);
+      const d = Math.floor(diff / (1000*60*60*24));
+      if(d===0) return 'Today';
+      if(d===1) return '1 day ago';
+      return `${d} days ago`;
+    };
+
+    // State
+    let allMovies = [];
+    let filtered = [];
+
+    // Fetch realtime movies
+    onValue(ref(db,'movies'), snap => {
+      const val = snap.val() || {};
+      allMovies = Object.entries(val).map(([id, m])=>({ id, ...m }));
+      // sort newest first (by releasedAt fallback to push order)
+      allMovies.sort((a,b)=> (b.releasedAt||0) - (a.releasedAt||0));
+      filtered = allMovies;
+      render();
     });
-  }
-});
 
-function showModal(movie){
-  document.getElementById("modal-title").textContent = movie.title;
-  document.getElementById("modal-description").textContent = movie.description;
-  document.getElementById("modal-rating").textContent = movie.rating;
+    const render = () => {
+      grid.innerHTML = '';
+      if(!filtered.length){
+        const empty = document.createElement('p');
+        empty.style.color='var(--muted)';
+        empty.style.gridColumn='1 / -1';
+        empty.textContent = 'No movies found.';
+        grid.appendChild(empty);
+        return;
+      }
 
-  downloadLinksContainer.innerHTML = "";
-  if(movie.downloadLinks && movie.downloadLinks.length > 0){
-    movie.downloadLinks.forEach((link,i) => {
-      const a = document.createElement("a");
-      a.href = link;
-      a.target="_blank";
-      a.classList.add("download-link");
-      a.textContent = `Download ${i+1}`;
-      downloadLinksContainer.appendChild(a);
-    });
-  }
-  modal.classList.add("show");
-}
+      for(const m of filtered){
+        const card = document.createElement('article');
+        card.className = 'card';
 
-closeModal.onclick = ()=>modal.classList.remove("show");
-window.onclick = e=>{ if(e.target==modal) modal.classList.remove("show"); }
-</script>
+        const img = document.createElement('img');
+        img.src = m.poster || '';
+        img.alt = m.title || 'Poster';
+        img.loading = 'lazy';
+        img.className = 'thumb';
+
+        const grad = document.createElement('div');
+        grad.className = 'grad';
+
+        // ribbons
+        if((m.tags && m.tags.includes('TRENDING')) || m.trending){
+          const ribbon = document.createElement('div');
+          ribbon.className='ribbon';
+          ribbon.textContent='TRENDING';
+          card.appendChild(ribbon);
+        }
+        // HD badge / quality
+        const badge = document.createElement('div');
+        badge.className='badge';
+        badge.textContent = (m.quality || 'HD').toUpperCase();
+
+        // age pill
+        const age = document.createElement('div');
+        age.className='age';
+        age.textContent = daysAgo(m.releasedAt) || (m.releasedAtText || '');
+
+        // meta
+        const meta = document.createElement('div');
+        meta.className='meta';
+        const t = document.createElement('p'); t.className='title'; t.textContent = m.title || 'Untitled';
+        const st = document.createElement('p'); st.className='subtitle'; st.textContent = m.subtitle || m.description?.slice(0,80) || '';
+        meta.appendChild(t); meta.appendChild(st);
+
+        card.appendChild(img);
+        card.appendChild(grad);
+        card.appendChild(age);
+        card.appendChild(badge);
+        card.appendChild(meta);
+
+        card.addEventListener('click',()=>openModal(m));
+        grid.appendChild(card);
+      }
+    };
+
+    // Search (title + subtitle)
+    const doSearch = () => {
+      const q = searchInput.value.trim().toLowerCase();
+      if(!q) { filtered = allMovies; render(); return; }
+      filtered = allMovies.filter(m => (
+        (m.title||'').toLowerCase().includes(q) || (m.subtitle||'').toLowerCase().includes(q)
+      ));
+      render();
+    };
+    searchBtn.addEventListener('click', doSearch);
+    searchInput.addEventListener('keydown', (e)=>{ if(e.key==='Enter') doSearch(); });
+
+    // Modal
+    const modal = document.getElementById('modal');
+    const mPoster = document.getElementById('m-poster');
+    const mTitle = document.getElementById('m-title');
+    const mDesc = document.getElementById('m-desc');
+    const mRating = document.getElementById('m-rating');
+    const mLinks = document.getElementById('m-links');
+    document.getElementById('close').addEventListener('click', ()=> modal.classList.remove('show'));
+    modal.addEventListener('click', (e)=>{ if(e.target===modal) modal.classList.remove('show'); });
+
+    function openModal(m){
+      mPoster.src = m.poster || '';
+      mTitle.textContent = m.title || 'Untitled';
+      mDesc.textContent = m.description || '';
+      mRating.textContent = m.rating || '—';
+
+      mLinks.innerHTML = '';
+      const links = Array.isArray(m.downloadLinks) ? m.downloadLinks : [];
+      if(!links.length){
+        const d = document.createElement('div');
+        d.style.color='var(--muted)';
+        d.textContent = 'No download links available.';
+        mLinks.appendChild(d);
+      } else {
+        links.forEach((url, i)=>{
+          if(!url) return;
+          const a = document.createElement('a');
+          a.href = url; a.target='_blank'; a.rel='noopener';
+          a.className = 'd-btn';
+          a.textContent = `Download ${i+1}`;
+          mLinks.appendChild(a);
+        });
+      }
+
+      modal.classList.add('show');
+    }
+  </script>
 </body>
 </html>
