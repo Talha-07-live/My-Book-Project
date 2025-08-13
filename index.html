@@ -10,41 +10,44 @@
   <link rel="icon" href="https://s10.gifyu.com/images/SrMU9.png">
   <style>
     :root{
-      --bg:#0c0714;          /* deep purple background */
-      --card:#161129;        /* card surface */
-      --muted:#a7a4b4;       /* secondary text */
-      --primary:#19d3ff;     /* cyan */
-      --primary-2:#4f46e5;   /* indigo */
-      --accent:#ff6b6b;      /* ribbon */
+      --bg:#0c0714;
+      --card:#161129;
+      --muted:#a7a4b4;
+      --primary:#19d3ff;
+      --primary-2:#4f46e5;
+      --accent:#ff6b6b;
       --radius:16px;
       --shadow:0 10px 30px rgba(0,0,0,.35);
     }
     *{box-sizing:border-box}
-    html,body{height:100%}
-    body{
-      margin:0; font-family:Poppins, system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
-      background: radial-gradient(1000px 600px at -10% -10%, #201a35 0%, transparent 60%),
-                  radial-gradient(800px 500px at 120% 0%, #1b1530 0%, transparent 60%),
-                  var(--bg);
-      color:#fff;
-    }
+    html,body{height:100%;margin:0;font-family:Poppins, system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;background:radial-gradient(1000px 600px at -10% -10%, #201a35 0%, transparent 60%), radial-gradient(800px 500px at 120% 0%, #1b1530 0%, transparent 60%), var(--bg);color:#fff}
     .container{max-width:1280px;margin:0 auto;padding:18px 16px}
 
     /* Header */
-    .header{display:flex;align-items:center;gap:14px;flex-wrap:wrap}
-    .logo{font-weight:800;letter-spacing:1px;font-size:clamp(22px,3.2vw,34px)}
-    .logo span{background:linear-gradient(90deg,#ff6b6b,#feca57,#1dd1a1,#48dbfb,#5f27cd); -webkit-background-clip:text; background-clip:text; color:transparent;}
-    .tld{color:#ff4d4f;font-weight:800;margin-left:4px}
-    .searchbar{margin-left:auto;display:flex;gap:10px;align-items:center;flex:1;justify-content:flex-end}
-    .searchbar input{width:min(540px,100%);background:#0d0a1a;border:1px solid #2a2348;color:#fff;padding:12px 14px;border-radius:999px;outline:none;transition:.2s}
+    .header{display:flex;align-items:center;gap:14px;flex-wrap:wrap;position:sticky;top:0;z-index:40;background:linear-gradient(180deg, rgba(12,7,20,.95), rgba(12,7,20,.65) 60%, transparent);backdrop-filter:saturate(140%) blur(6px)}
+    .logo{font-weight:800;letter-spacing:1px;font-size:clamp(20px,3.2vw,34px);padding:10px}
+    .logo span{background:linear-gradient(90deg,#ff6b6b,#feca57,#1dd1a1,#48dbfb,#5f27cd); -webkit-background-clip:text; background-clip:text; color:transparent}
+
+    /* Searchbar responsive */
+    .searchbar{margin-left:auto;display:flex;gap:10px;align-items:center;flex:1;justify-content:flex-end;position:relative;padding:10px}
+    .searchbar-inner{display:flex;gap:10px;align-items:center;width:100%;max-width:820px}
+    .searchbar input{flex:1;min-width:0;background:#0d0a1a;border:1px solid #2a2348;color:#fff;padding:12px 14px;border-radius:999px;outline:none;transition:.18s;font-size:15px}
     .searchbar input::placeholder{color:#7f7a95}
-    .searchbar input:focus{border-color:#5b54ff; box-shadow:0 0 0 4px rgba(79,70,229,.25)}
-    .btn{border:0;border-radius:999px;padding:12px 18px;font-weight:800;cursor:pointer;background:linear-gradient(90deg,var(--primary),var(--primary-2));color:#0b0b0b}
+    .searchbar input:focus{border-color:#5b54ff; box-shadow:0 0 0 4px rgba(79,70,229,.12)}
+    .btn{border:0;border-radius:999px;padding:10px 14px;font-weight:800;cursor:pointer;background:linear-gradient(90deg,var(--primary),var(--primary-2));color:#0b0b0b;white-space:nowrap}
+
+    /* Suggestions dropdown */
+    .sugg{position:absolute;left:0;right:0;margin:auto;top:100%;width:min(820px,calc(100% - 32px));background:#0d0a1a;border:1px solid #2a2348;border-radius:12px;margin-top:8px;box-shadow:var(--shadow);max-height:320px;overflow:auto;display:none;z-index:60}
+    .sugg.show{display:block}
+    .sugg-item{padding:10px 12px;cursor:pointer;border-bottom:1px solid rgba(255,255,255,.04);display:flex;justify-content:space-between;gap:10px}
+    .sugg-item:hover{background:#15102a}
+    .sugg-item small{color:#9e99b6}
 
     /* Section */
-    .section-title{display:flex;align-items:center;gap:10px;background:#1b1530;border:1px solid #2a2348;padding:10px 14px;border-radius:12px;box-shadow:var(--shadow)}
-    .section-title .flame{width:28px;height:28px;border-radius:8px;background:#1f1838;display:grid;place-items:center;}
+    .section-title{display:flex;align-items:center;gap:10px;background:#1b1530;border:1px solid #2a2348;padding:10px 14px;border-radius:12px;box-shadow:var(--shadow);margin-top:12px}
+    .section-title .flame{width:28px;height:28px;border-radius:8px;background:#1f1838;display:grid;place-items:center}
     .section-title h2{margin:0;font-size:clamp(16px,2.5vw,20px);letter-spacing:.2px}
+    .request-btn{margin-left:auto;text-decoration:none;color:#0b0b0b;background:linear-gradient(90deg,var(--primary),var(--primary-2));padding:10px 14px;border-radius:12px;font-weight:800}
 
     /* Grid */
     .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:18px;margin-top:16px}
@@ -53,23 +56,22 @@
     /* Card */
     .card{position:relative;border-radius:16px;overflow:hidden;background:var(--card);border:1px solid #2a2348;box-shadow:var(--shadow);transition:transform .25s ease, box-shadow .25s ease}
     .card:hover{transform:translateY(-4px) scale(1.02);box-shadow:0 14px 40px rgba(0,0,0,.45)}
-    .thumb{aspect-ratio:2/3;width:100%;object-fit:cover;display:block;filter:saturate(1.05)}
-    .grad{position:absolute;inset:auto 0 0 0;height:52%;background:linear-gradient(180deg,transparent,rgba(0,0,0,.9))}
+    .thumb{aspect-ratio:2/3;width:100%;object-fit:cover;display:block;filter:saturate(1.05);vertical-align:middle}
+    .grad{position:absolute;inset:auto 0 0 0;height:52%;background:linear-gradient(180deg,transparent,rgba(0,0,0,.9));pointer-events:none;z-index:5}
 
-    /* Ribbons & badges */
-    .ribbon{position:absolute;top:10px;left:10px;background:linear-gradient(90deg,#ff6b6b,#f06595);color:#fff;font-weight:800;padding:6px 10px;border-radius:8px;box-shadow:0 6px 18px rgba(0,0,0,.35);font-size:12px;letter-spacing:.4px}
-    .badge{position:absolute;bottom:12px;right:12px;background:#1b1530;border:1px solid #2a2348;padding:6px 8px;border-radius:8px;color:#d6d2e6;font-weight:700;font-size:12px}
-    .age{position:absolute;bottom:12px;left:12px;display:flex;align-items:center;gap:6px;background:rgba(0,0,0,.45);backdrop-filter:blur(6px);padding:6px 10px;border-radius:999px;font-size:12px}
+    /* Ribbons & badges (ensure above image) */
+    .ribbon{position:absolute;top:10px;left:10px;background:linear-gradient(90deg,#ff6b6b,#f06595);color:#fff;font-weight:800;padding:6px 10px;border-radius:8px;box-shadow:0 6px 18px rgba(0,0,0,.35);font-size:12px;letter-spacing:.4px;z-index:20}
+    .badge{position:absolute;bottom:12px;right:12px;background:#1b1530;border:1px solid #2a2348;padding:6px 8px;border-radius:8px;color:#d6d2e6;font-weight:700;font-size:12px;z-index:20}
+    .age{position:absolute;bottom:12px;left:12px;display:flex;align-items:center;gap:6px;background:rgba(0,0,0,.45);backdrop-filter:blur(6px);padding:6px 10px;border-radius:999px;font-size:12px;z-index:20}
 
     /* Meta */
     .meta{padding:10px 12px 14px}
-    .title{font-weight:800;font-size:clamp(14px,2.4vw,16px);line-height:1.35;margin:0 0 6px 0;color:#faf8ff}
-    .subtitle{margin:0;color:var(--muted);font-size:clamp(11px,2vw,12px)}
+    .title{font-weight:800;font-size:clamp(13px,2.4vw,16px);line-height:1.35;margin:0 0 6px 0;color:#faf8ff}
+    .subtitle{margin:0;color:var(--muted);font-size:clamp(10px,2vw,12px)}
 
     /* Modal */
     .modal{position:fixed;inset:0;background:rgba(0,0,0,.75);display:none;align-items:center;justify-content:center;padding:16px;z-index:99}
-    .modal.show{display:flex;animation:fade .2s ease}
-    @keyframes fade{from{opacity:0}to{opacity:1}}
+    .modal.show{display:flex}
     .sheet{width:min(980px,100%);background:#140f26;border:1px solid #302a55;border-radius:20px;overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,.55)}
     .sheet-head{display:grid;grid-template-columns:140px 1fr;gap:14px;padding:14px}
     @media (min-width:720px){ .sheet-head{grid-template-columns:200px 1fr;gap:16px;padding:16px} }
@@ -83,38 +85,87 @@
     .d-btn:hover{transform:translateY(-2px) scale(1.02)}
     .close{position:absolute;top:14px;right:16px;border:0;background:#1b1530;border:1px solid #2a2348;color:#fff;padding:8px 12px;border-radius:999px;cursor:pointer}
 
+    /* Helpers */
+    .muted{color:var(--muted)}
+
     /* Skeletons */
     .skeleton{position:relative;overflow:hidden;background:#1a1530;border-radius:16px;border:1px solid #2a2348;aspect-ratio:2/3}
     .skeleton::after{content:"";position:absolute;inset:0;background:linear-gradient(90deg,transparent,rgba(255,255,255,.06),transparent);transform:translateX(-100%);animation:shimmer 1.4s infinite}
     @keyframes shimmer{to{transform:translateX(100%)}}
+
+    /* Sentinel for infinite scroll */
+    .sentinel{height:1px}
+
+    /* Responsive tweaks */
+    @media (max-width:760px){
+      .searchbar{padding:10px 12px}
+      .searchbar-inner{flex-direction:row;gap:8px}
+      .sugg{top: calc(100% + 6px);left:8px;right:8px;width:calc(100% - 16px)}
+      .logo{font-size:20px;padding:8px}
+      .section-title{padding:10px}
+      .sheet{margin:12px}
+    }
+    @media (max-width:460px){
+      .searchbar-inner{flex-direction:column-reverse;align-items:stretch}
+      .searchbar input{border-radius:12px;padding:10px;font-size:15px}
+      .btn{width:100%;padding:10px}
+      .sugg{left:10px;right:10px;width:calc(100% - 20px)}
+      .section-title{flex-direction:row;align-items:center;gap:8px}
+      .grid{gap:12px}
+    }
+    .logo-link {
+        display: inline-block;
+        text-align: center;
+        text-decoration: none; /* underline remove */
+        color: inherit;        /* Original Color*/
+    }
+    @media (max-width: 600px){
+      .header{
+        justify-content: center; /* All in middle */
+      }
+      .logo-link{
+        display: inline-block;
+        text-align: center;
+      }
+      .searchbar{
+        width: 100%;
+        margin-top: 10px;
+        justify-content: center; /* Scearch bar in middle  */
+      }
+      
   </style>
 </head>
 <body>
   <header class="container header">
-    <div class="logo"><span>Talha's Collection</span><span class="tld"></span></div>
-    <div class="searchbar">
-      <input id="search" type="search" placeholder="Search …" aria-label="Search" />
-      <button class="btn" id="searchBtn">SEARCH</button>
+    <div class="logo">
+      <a href="https://talhas.collection.page.gd/" class="logo-link"><span>Talha's Collection</span><span class="tld"></span></a>
+    </div>
+    <div class="searchbar" role="search">
+      <div class="searchbar-inner">
+        <input id="search" type="search" placeholder="Search …" aria-label="Search" autocomplete="off" />
+        <button class="btn" id="searchBtn">SEARCH</button>
+      </div>
+      <div id="sugg" class="sugg" role="listbox" aria-label="Suggestions"></div>
     </div>
   </header>
 
   <main class="container section">
     <div class="section-title">
       <div class="flame">➕</div>
-      <h2></h2>
+      <h2 class="muted">Welcome</h2>
       <a href="https://group.talhascollectionjointrequest.xo.je/" target="_blank" class="request-btn">
-          Joint Movies, Anime Request Group
+          Joint Movies, Series, Anime Request Group
       </a>
     </div>
-     </header>
-    
-    <main class="container section">
-      <div class="section-title">
-        <div class="flame">🔥</div>
-        <h2>Latest Update</h2>
-      </div>
+  </main>
 
+  <main class="container section">
+    <div class="section-title">
+      <div class="flame">🔥</div>
+      <h2>Latest Update</h2>
+    </div>
     <div id="grid" class="grid"></div>
+    <div id="sentinel" class="sentinel"></div>
   </main>
 
   <!-- Modal -->
@@ -137,6 +188,7 @@
     import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
     import { getDatabase, ref, onValue } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
 
+    /* === Firebase Config (unchanged structure) === */
     const firebaseConfig = {
       apiKey: "AIzaSyDpiN0OV1aD709Q987PymfOOp_lcW6Hid8",
       authDomain: "my-book-project-c5a17.firebaseapp.com",
@@ -151,17 +203,21 @@
     const app = initializeApp(firebaseConfig);
     const db = getDatabase(app);
 
+    /* === Elements === */
     const grid = document.getElementById('grid');
+    const sentinel = document.getElementById('sentinel');
     const searchInput = document.getElementById('search');
     const searchBtn = document.getElementById('searchBtn');
+    const sugg = document.getElementById('sugg');
 
-    // skeletons
-    const makeSkeletons = (n=10)=>{
+    /* === Skeletons (Shimmer) === */
+    const makeSkeletons = (n=12)=>{
       grid.innerHTML = '';
       for(let i=0;i<n;i++) grid.appendChild(Object.assign(document.createElement('div'),{className:'skeleton'}));
     };
     makeSkeletons();
 
+    /* === Utilities === */
     const daysAgo = ts => {
       if(!ts) return '';
       const diff = Math.max(0, Date.now() - ts);
@@ -170,21 +226,89 @@
       if(d===1) return '1 day ago';
       return `${d} days ago`;
     };
+    const clamp = (n,min,max)=> Math.min(max, Math.max(min, n));
 
+    // Simple debounce & throttle
+    function debounce(fn, delay=120){
+      let t; return (...a)=>{ clearTimeout(t); t=setTimeout(()=>fn(...a), delay); };
+    }
+    function throttle(fn, wait=200){
+      let last=0, timer; return (...a)=>{
+        const now=Date.now();
+        const remaining = wait - (now - last);
+        if(remaining<=0){ last=now; fn(...a); }
+        else if(!timer){ timer=setTimeout(()=>{ last=Date.now(); timer=null; fn(...a); }, remaining); }
+      };
+    }
+
+    /* === IndexedDB caching (no structure change to HTML) === */
+    function openDB(){
+      return new Promise((resolve, reject)=>{
+        const req = indexedDB.open('movieCacheDB', 1);
+        req.onerror = ()=> reject(req.error);
+        req.onsuccess = ()=> resolve(req.result);
+        req.onupgradeneeded = ()=>{
+          const db = req.result;
+          if(!db.objectStoreNames.contains('movies')){
+            db.createObjectStore('movies', { keyPath: 'id' });
+          }
+          if(!db.objectStoreNames.contains('meta')){
+            db.createObjectStore('meta', { keyPath: 'key' });
+          }
+        };
+      });
+    }
+    async function saveMoviesToDB(movies){
+      const db = await openDB();
+      const tx = db.transaction(['movies','meta'],'readwrite');
+      const s = tx.objectStore('movies');
+      const m = tx.objectStore('meta');
+      s.clear();
+      movies.forEach(x=> s.put(x));
+      m.put({key:'updatedAt', value: Date.now()});
+      return tx.complete;
+    }
+    async function getMoviesFromDB(){
+      const db = await openDB();
+      const tx = db.transaction('movies','readonly');
+      const s = tx.objectStore('movies');
+      return new Promise(res=>{ const r = s.getAll(); r.onsuccess=()=>res(r.result||[]); });
+    }
+
+    /* === State === */
     let allMovies = [];
     let filtered = [];
+    let pageSize = 24; // Pagination / Infinite scroll
+    let page = 1;      // current page (1-indexed)
+    let observer;      // intersection observer for infinite scroll
+    let imgObserver;   // lazy images
 
-    onValue(ref(db,'movies'), snap => {
-      const val = snap.val() || {};
-      allMovies = Object.entries(val).map(([id, m])=>({ id, ...m }));
-      allMovies.sort((a,b)=> (b.releasedAt||0) - (a.releasedAt||0));
-      filtered = allMovies;
-      render();
-    });
+    /* === Image Lazy Loader (IntersectionObserver + requestIdleCallback) === */
+    const setupImgObserver = ()=>{
+      imgObserver && imgObserver.disconnect();
+      imgObserver = new IntersectionObserver((entries)=>{
+        entries.forEach(entry=>{
+          if(entry.isIntersecting){
+            const img = entry.target;
+            const src = img.getAttribute('data-src');
+            if(src){
+              const load = ()=>{ img.src = src; img.removeAttribute('data-src'); };
+              if('requestIdleCallback' in window){ requestIdleCallback(load, {timeout: 500}); }
+              else setTimeout(load, 0);
+            }
+            imgObserver.unobserve(img);
+          }
+        });
+      },{rootMargin:'200px 0px'});
+    };
 
-    const render = () => {
+    /* === Render (Debounced, Connection reuse is inherent via single onValue) === */
+    const render = debounce(()=>{
+      // When filtering or first render, reset grid and draw up to current page
       grid.innerHTML = '';
-      if(!filtered.length){
+      const total = filtered.length;
+      const upto = clamp(page*pageSize, 0, total);
+      if(!total){
         const empty = document.createElement('p');
         empty.style.color='#a7a4b4';
         empty.style.gridColumn='1 / -1';
@@ -193,15 +317,21 @@
         return;
       }
 
-      for(const m of filtered){
+      // Create document fragment for performance
+      const frag = document.createDocumentFragment();
+      for(let i=0;i<upto;i++){
+        const m = filtered[i];
         const card = document.createElement('article');
         card.className = 'card';
 
         const img = document.createElement('img');
-        img.src = m.poster || '';
         img.alt = m.title || 'Poster';
-        img.loading = 'lazy';
+        img.loading = 'lazy'; // browser-native hint
         img.className = 'thumb';
+        // Use data-src to delay actual request
+        img.setAttribute('data-src', m.poster || '');
+        // tiny transparent pixel as placeholder to reserve space
+        img.src = 'data:image/gif;base64,R0lGODlhAQABAAAAACw=';
 
         const grad = document.createElement('div');
         grad.className = 'grad';
@@ -223,7 +353,7 @@
         const meta = document.createElement('div');
         meta.className='meta';
         const t = document.createElement('p'); t.className='title'; t.textContent = m.title || 'Untitled';
-        const st = document.createElement('p'); st.className='subtitle'; st.textContent = m.subtitle || m.description?.slice(0,80) || '';
+        const st = document.createElement('p'); st.className='subtitle'; st.textContent = m.subtitle || (m.description? String(m.description).slice(0,80): '') || '';
         meta.appendChild(t); meta.appendChild(st);
 
         card.appendChild(img);
@@ -233,21 +363,105 @@
         card.appendChild(meta);
 
         card.addEventListener('click',()=>openModal(m));
-        grid.appendChild(card);
+        frag.appendChild(card);
       }
+      grid.appendChild(frag);
+
+      // observe images for lazy-load
+      setupImgObserver();
+      grid.querySelectorAll('img[data-src]').forEach(img=> imgObserver.observe(img));
+    }, 120);
+
+    /* === Infinite Scroll (Pagination) === */
+    const setupInfiniteScroll = ()=>{
+      observer && observer.disconnect();
+      observer = new IntersectionObserver((entries)=>{
+        entries.forEach(entry=>{
+          if(entry.isIntersecting){
+            const totalPages = Math.ceil(filtered.length / pageSize);
+            if(page < totalPages){
+              page += 1;
+              render();
+            }
+          }
+        });
+      }, { rootMargin: '400px 0px' });
+      observer.observe(sentinel);
     };
 
-    const doSearch = () => {
+    /* === Search (Request Throttling + Suggestions) === */
+    const doSearch = ()=>{
       const q = searchInput.value.trim().toLowerCase();
-      if(!q) { filtered = allMovies; render(); return; }
+      if(!q){ filtered = allMovies; page = 1; hideSuggestions(); render(); return; }
       filtered = allMovies.filter(m => (
         (m.title||'').toLowerCase().includes(q) || (m.subtitle||'').toLowerCase().includes(q)
       ));
+      page = 1; // reset pagination after search
       render();
+      showSuggestions(q);
     };
-    searchBtn.addEventListener('click', doSearch);
-    searchInput.addEventListener('keydown', (e)=>{ if(e.key==='Enter') doSearch(); });
+    const throttledSearch = throttle(doSearch, 220);
+    const debouncedInput = debounce(()=> showSuggestions(searchInput.value.trim().toLowerCase()), 160);
 
+    searchBtn.addEventListener('click', doSearch);
+    searchInput.addEventListener('input', (e)=>{ throttledSearch(); debouncedInput(); });
+    searchInput.addEventListener('keydown', (e)=>{ if(e.key==='Enter'){ doSearch(); hideSuggestions(); } });
+    document.addEventListener('click', (e)=>{ if(!sugg.contains(e.target) && e.target!==searchInput) hideSuggestions(); });
+
+    function showSuggestions(q){
+      if(!q){ hideSuggestions(); return; }
+      const max = 10;
+      const items = [];
+      for(const m of allMovies){
+        const title = (m.title||'');
+        const subtitle = (m.subtitle||'');
+        if(title.toLowerCase().includes(q) || subtitle.toLowerCase().includes(q)){
+          items.push({id:m.id, title, subtitle});
+          if(items.length>=max) break;
+        }
+      }
+      if(!items.length){ hideSuggestions(); return; }
+      sugg.innerHTML = '';
+      for(const it of items){
+        const row = document.createElement('div');
+        row.className = 'sugg-item';
+        row.role = 'option';
+        row.innerHTML = `<span>${it.title}</span><small>${it.subtitle? it.subtitle.slice(0,36): ''}</small>`;
+        row.addEventListener('click', ()=>{
+          searchInput.value = it.title;
+          hideSuggestions();
+          doSearch();
+        });
+        sugg.appendChild(row);
+      }
+      sugg.classList.add('show');
+    }
+    function hideSuggestions(){ sugg.classList.remove('show'); }
+
+    /* === Firebase single persistent listener (Connection reuse) === */
+    // 1) First, try local cache for instant paint
+    getMoviesFromDB().then(localMovies=>{
+      if(localMovies && localMovies.length){
+        allMovies = localMovies.slice().sort((a,b)=> (b.releasedAt||0)-(a.releasedAt||0));
+        filtered = allMovies; page = 1; render(); setupInfiniteScroll();
+      }
+    }).catch(()=>{});
+
+    // 2) Live data from Firebase (single onValue)
+    onValue(ref(db,'movies'), snap => {
+      const val = snap.val() || {};
+      allMovies = Object.entries(val).map(([id, m])=>({ id, ...m }));
+      allMovies.sort((a,b)=> (b.releasedAt||0) - (a.releasedAt||0));
+      filtered = allMovies;
+      page = 1;
+      render();
+      setupInfiniteScroll();
+      // Update cache without blocking UI
+      if('requestIdleCallback' in window){ requestIdleCallback(()=> saveMoviesToDB(allMovies), {timeout: 1000}); }
+      else setTimeout(()=> saveMoviesToDB(allMovies), 0);
+    }, { onlyOnce: false });
+
+    /* === Modal === */
     const modal = document.getElementById('modal');
     const mPoster = document.getElementById('m-poster');
     const mTitle = document.getElementById('m-title');
