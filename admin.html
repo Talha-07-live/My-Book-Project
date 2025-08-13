@@ -1,116 +1,158 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Admin Panel</title>
-<style>
-  body{font-family:sans-serif;background:#111;color:#fff;text-align:center;padding:20px;}
-  input, textarea, button{ display:block; margin:10px auto; width:80%; padding:10px; border-radius:6px; border:none; }
-  button{ background:#0af; color:#000; font-weight:bold; cursor:pointer; }
-  #movie-form{ display:none; }
-  .link-input { width:70%; display:inline-block; margin:5px; }
-  .remove-link { display:inline-block; cursor:pointer; color:#f00; margin-left:5px; }
-</style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Admin • Add Movie</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    :root{ --bg:#0c0714; --panel:#161129; --muted:#a7a4b4; --primary:#19d3ff; --primary-2:#4f46e5; }
+    *{box-sizing:border-box}
+    body{margin:0;font-family:Poppins,system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;background:var(--bg);color:#fff}
+    .wrap{max-width:980px;margin:0 auto;padding:18px 16px}
+    h1{margin:10px 0 18px 0}
+
+    .card{background:#140f26;border:1px solid #302a55;border-radius:16px;box-shadow:0 8px 30px rgba(0,0,0,.35);padding:16px}
+    .row{display:grid;gap:12px;grid-template-columns:1fr}
+    @media(min-width:720px){ .row{grid-template-columns:1fr 1fr} }
+    label{font-weight:700;font-size:14px;margin-bottom:6px;display:block}
+    input[type="text"], input[type="url"], input[type="date"], textarea, select{
+      width:100%;background:#0d0a1a;border:1px solid #2a2348;color:#fff;padding:12px 14px;border-radius:10px;outline:none;transition:.2s
+    }
+    textarea{min-height:110px;resize:vertical}
+    .flex{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+    .btn{border:0;border-radius:999px;padding:12px 18px;font-weight:800;cursor:pointer;background:linear-gradient(90deg,var(--primary),var(--primary-2));color:#0b0b0b}
+    .ghost{background:#1b1530;border:1px solid #2a2348;color:#fff}
+
+    .links{margin-top:12px}
+    .link-item{display:grid;grid-template-columns:160px 1fr auto;gap:10px;margin-bottom:10px}
+    @media(max-width:560px){ .link-item{grid-template-columns:1fr} }
+    .remove{background:#2a1f3f;border:1px solid #3b2f5c;color:#fff;border-radius:8px;padding:10px 12px;cursor:pointer}
+
+    .login{display:flex;gap:8px;align-items:center}
+    .ok{color:#33d69f;font-weight:700}
+  </style>
 </head>
 <body>
+  <div class="wrap">
+    <h1>Admin Panel</h1>
 
-<h1>Admin Panel</h1>
+    <div class="card" id="login-card">
+      <div class="login">
+        <input type="password" id="admin-pass" placeholder="Enter Admin Password" />
+        <button class="btn" id="login-btn">Login</button>
+      </div>
+      <p style="color:#a7a4b4;margin-top:8px">Tip: Change <code>ADMIN_PASS</code> in the script.</p>
+    </div>
 
-<div id="login-form">
-  <input type="password" id="admin-pass" placeholder="Enter Admin Password">
-  <button id="login-btn">Login</button>
-</div>
+    <div class="card" id="form-card" style="display:none">
+      <div class="row">
+        <div>
+          <label>Movie Title</label>
+          <input type="text" id="title" placeholder="Movie Title" required />
+        </div>
+        <div>
+          <label>Poster URL</label>
+          <input type="url" id="poster" placeholder="https://…/poster.jpg" required />
+        </div>
+        <div style="grid-column:1/-1">
+          <label>Subtitle (optional)</label>
+          <input type="text" id="subtitle" placeholder="WEB-DL • 720p | 1080p" />
+        </div>
+        <div style="grid-column:1/-1">
+          <label>Description</label>
+          <textarea id="description" placeholder="Short description…" required></textarea>
+        </div>
+        <div>
+          <label>Rating</label>
+          <input type="text" id="rating" placeholder="8.5/10" />
+        </div>
+        <div>
+          <label>Quality</label>
+          <select id="quality">
+            <option value="HD">HD</option>
+            <option value="FHD">FHD</option>
+            <option value="2K">2K</option>
+            <option value="4K">4K</option>
+          </select>
+        </div>
+        <div>
+          <label>Released Date</label>
+          <input type="date" id="releasedDate" />
+        </div>
+        <div class="flex">
+          <label style="margin:0">TRENDING</label>
+          <input type="checkbox" id="trending" />
+        </div>
+      </div>
 
-<div id="movie-form">
-  <input id="title" placeholder="Movie Title">
-  <input id="poster" placeholder="Poster URL">
-  <textarea id="description" placeholder="Description"></textarea>
-  <input id="rating" placeholder="Rating (e.g., 8.5/10)">
+      <div class="links">
+        <h3 style="margin:10px 0">Download Links</h3>
+        <div id="links-container"></div>
+        <button class="btn" id="addLink">+ Add Link</button>
+      </div>
 
-  <div id="links-container">
-    <div class="link-item">
-      <input class="link-input" placeholder="Download Link">
-      <span class="remove-link" onclick="this.parentNode.remove()">×</span>
+      <div style="margin-top:14px" class="flex">
+        <button class="btn" id="addMovie">Save Movie</button>
+        <span class="ok" id="status"></span>
+      </div>
     </div>
   </div>
-  <button id="addLink">Add Link</button>
-  <button id="addMovie">Add Movie</button>
-</div>
 
-<script type="module">
-import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
-import { getDatabase, ref, push } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
+    import { getDatabase, ref, push } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
 
-const firebaseConfig = {
-  apiKey: "AIzaSyDpiN0OV1aD709Q987PymfOOp_lcW6Hid8",
-  authDomain: "my-book-project-c5a17.firebaseapp.com",
-  databaseURL: "https://my-book-project-c5a17-default-rtdb.asia-southeast1.firebasedatabase.app",
-  projectId: "my-book-project-c5a17",
-  storageBucket: "my-book-project-c5a17.appspot.com",
-  messagingSenderId: "422603504433",
-  appId: "1:422603504433:web:e6870a7d2c57c045eb0e10",
-  measurementId: "G-F763MR7FR9"
-};
+    const firebaseConfig = {
+      apiKey: "AIzaSyDpiN0OV1aD709Q987PymfOOp_lcW6Hid8",
+      authDomain: "my-book-project-c5a17.firebaseapp.com",
+      databaseURL: "https://my-book-project-c5a17-default-rtdb.asia-southeast1.firebasedatabase.app",
+      projectId: "my-book-project-c5a17",
+      storageBucket: "my-book-project-c5a17.appspot.com",
+      messagingSenderId: "422603504433",
+      appId: "1:422603504433:web:e6870a7d2c57c045eb0e10",
+      measurementId: "G-F763MR7FR9"
+    };
 
-const app = initializeApp(firebaseConfig);
-const db = getDatabase(app);
+    const app = initializeApp(firebaseConfig);
+    const db = getDatabase(app);
 
-const loginForm = document.getElementById("login-form");
-const movieForm = document.getElementById("movie-form");
+    const ADMIN_PASS = "12345"; // <-- CHANGE THIS
 
-const ADMIN_PASS = "12345"; // Change this password
+    const loginCard = document.getElementById('login-card');
+    const formCard  = document.getElementById('form-card');
+    document.getElementById('login-btn').onclick = () => {
+      const pass = (document.getElementById('admin-pass').value||'').trim();
+      if(pass === ADMIN_PASS){ loginCard.style.display='none'; formCard.style.display='block'; }
+      else alert('Wrong Password!');
+    };
 
-document.getElementById("login-btn").onclick = () => {
-  const pass = document.getElementById("admin-pass").value;
-  if(pass === ADMIN_PASS){
-    loginForm.style.display = "none";
-    movieForm.style.display = "block";
-  }else{
-    alert("Wrong Password!");
-  }
-}
+    // Links UI helpers
+    const linksContainer = document.getElementById('links-container');
+    const addLinkRow = (text='', url='') => {
+      const row = document.createElement('div');
+      row.className = 'link-item';
+      row.innerHTML = `
+        <input type="text" placeholder="Text e.g. 720p" value="${text.replaceAll('"','&quot;')}">
+        <input type="url"  placeholder="https://…" value="${url.replaceAll('"','&quot;')}">
+        <button class="remove" type="button">Remove</button>
+      `;
+      row.querySelector('.remove').onclick = ()=> row.remove();
+      linksContainer.appendChild(row);
+    };
+    // start with one row
+    addLinkRow();
+    document.getElementById('addLink').onclick = ()=> addLinkRow();
 
-// Add new link input
-document.getElementById("addLink").onclick = () => {
-  const container = document.getElementById("links-container");
-  const div = document.createElement("div");
-  div.classList.add("link-item");
-  div.innerHTML = `<input class="link-input" placeholder="Download Link"><span class="remove-link" onclick="this.parentNode.remove()">×</span>`;
-  container.appendChild(div);
-}
-
-// Add movie to Firebase
-document.getElementById("addMovie").onclick = () => {
-  const title = document.getElementById("title").value;
-  const poster = document.getElementById("poster").value;
-  const description = document.getElementById("description").value;
-  const rating = document.getElementById("rating").value;
-
-  const linkInputs = document.querySelectorAll(".link-input");
-  const downloadLinks = [];
-  linkInputs.forEach(input => {
-    if(input.value.trim() !== "") downloadLinks.push(input.value.trim());
-  });
-
-  if(!title || !poster || !description || downloadLinks.length === 0){
-    alert("Please fill Title, Poster, Description, and at least one Download Link!");
-    return;
-  }
-
-  const movie = { title, poster, description, rating, downloadLinks };
-  push(ref(db, 'movies'), movie);
-  alert("Movie Added!");
-
-  document.getElementById("title").value = "";
-  document.getElementById("poster").value = "";
-  document.getElementById("description").value = "";
-  document.getElementById("rating").value = "";
-  document.getElementById("links-container").innerHTML = `<div class="link-item">
-      <input class="link-input" placeholder="Download Link">
-      <span class="remove-link" onclick="this.parentNode.remove()">×</span>
-    </div>`;
-}
-</script>
-</body>
-</html>
+    // Save movie
+    document.getElementById('addMovie').onclick = async () => {
+      const title = document.getElementById('title').value.trim();
+      const poster = document.getElementById('poster').value.trim();
+      const subtitle = document.getElementById('subtitle').value.trim();
+      const description = document.getElementById('description').value.trim();
+      const rating = document.getElementById('rating').value.trim();
+      const quality = document.getElementById('quality').value;
+      const trending = document.getElementById('trending').checked;
+      const releasedDate = document.getElementById('releas
