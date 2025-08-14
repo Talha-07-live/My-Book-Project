@@ -180,6 +180,8 @@
 
       const releasedAt = releasedDate ? new Date(releasedDate).getTime() : Date.now();
 
+      const pinned = document.getElementById('pin').checked;
+
       const movie = { title, poster, subtitle, description, rating, quality, trending, pinned, releasedAt, downloadLinks };
 
       try{
