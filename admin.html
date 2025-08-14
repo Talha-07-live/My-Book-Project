@@ -111,12 +111,6 @@
     import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
     import { getDatabase, ref, push } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
 
-    // ✅ Pinned movies top e show korar jonno sorting
-    movies.sort((a,b)=>{
-      if(a.pinned && !b.pinned) return -1;
-      if(!a.pinned && b.pinned) return 1;
-      return b.releasedAt - a.releasedAt;
-
     const firebaseConfig = {
       apiKey: "AIzaSyDpiN0OV1aD709Q987PymfOOp_lcW6Hid8",
       authDomain: "my-book-project-c5a17.firebaseapp.com",
