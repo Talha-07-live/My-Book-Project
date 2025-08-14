@@ -452,8 +452,11 @@
 
       // transform object map -> array
       const arr = Object.entries(json||{}).map(([id,m])=> ({ id, ...m }));
-      arr.sort((a,b)=> (b.releasedAt||0)-(a.releasedAt||0));
-
+      arr.sort((a,b)=>{
+        if(a.pinned && !b.pinned) return -1;  // pinned top
+        if(!a.pinned && b.pinned) return 1;
+        return (b.releasedAt||0) - (a.releasedAt||0); // baki latest
+      });
       // persist
       allMovies = arr;
       filtered = allMovies;
