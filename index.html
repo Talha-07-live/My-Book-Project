@@ -557,6 +557,30 @@
     }
     modal.classList.add('show');
   }
-  </script>
+
+  /* === Init === */
+  document.addEventListener('DOMContentLoaded', async ()=>{
+    // 1) Offline-first: IndexedDB cache paint
+    try{
+      const cached = await getMoviesFromDB();
+      if(cached && cached.length){
+        allMovies = cached.slice().sort((a,b)=> (b.releasedAt||0)-(a.releasedAt||0));
+        filtered = allMovies; page = 1; render(); setupInfiniteScroll();
+      }
+    }catch(e){ /* ignore */ }
+
+    // 2) Network revalidate once
+    revalidateNow();
+
+    // 3) Low-frequency polling
+    setInterval(()=>{ if(!document.hidden) revalidateNow(); }, REVALIDATE_INTERVAL);
+
+    // 4) Visibility/Focus triggers
+    window.addEventListener('focus', ()=> revalidateNow());
+    document.addEventListener('visibilitychange', ()=>{
+      if(document.visibilityState === 'visible') revalidateNow();
+   });
+  });
+</script>
 </body>
 </html>
