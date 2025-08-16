@@ -150,6 +150,22 @@
       row.querySelector('.remove').onclick = ()=> row.remove();
       linksContainer.appendChild(row);
     };
+    const daysAgo = ts => {
+      if(!ts) return '';
+      const diff = Math.max(0, Date.now() - ts);
+      const sec = Math.floor(diff / 1000);
+      const min = Math.floor(sec / 60);
+      const hr  = Math.floor(min / 60);
+      const d   = Math.floor(hr / 24);
+      
+      if(d === 0){
+        if(hr > 0) return `${hr} hour${hr > 1 ? 's' : ''} ago`;
+        if(min > 0) return `${min} minute${min > 1 ? 's' : ''} ago`;
+        return 'just now';
+      }
+      if(d === 1) return '1 day ago';
+      return `${d} days ago`;
+    };
     // start with one row
     addLinkRow();
     document.getElementById('addLink').onclick = ()=> addLinkRow();
