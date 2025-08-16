@@ -13,7 +13,6 @@
     body{margin:0;font-family:Poppins,system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;background:var(--bg);color:#fff}
     .wrap{max-width:980px;margin:0 auto;padding:18px 16px}
     h1{margin:10px 0 18px 0}
-
     .card{background:#140f26;border:1px solid #302a55;border-radius:16px;box-shadow:0 8px 30px rgba(0,0,0,.35);padding:16px}
     .row{display:grid;gap:12px;grid-template-columns:1fr}
     @media(min-width:720px){ .row{grid-template-columns:1fr 1fr} }
@@ -25,12 +24,10 @@
     .flex{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
     .btn{border:0;border-radius:999px;padding:12px 18px;font-weight:800;cursor:pointer;background:linear-gradient(90deg,var(--primary),var(--primary-2));color:#0b0b0b}
     .ghost{background:#1b1530;border:1px solid #2a2348;color:#fff}
-
     .links{margin-top:12px}
     .link-item{display:grid;grid-template-columns:160px 1fr auto;gap:10px;margin-bottom:10px}
     @media(max-width:560px){ .link-item{grid-template-columns:1fr} }
     .remove{background:#2a1f3f;border:1px solid #3b2f5c;color:#fff;border-radius:8px;padding:10px 12px;cursor:pointer}
-
     .login{display:flex;gap:8px;align-items:center}
     .ok{color:#33d69f;font-weight:700}
   </style>
@@ -148,7 +145,7 @@
         <button class="remove" type="button">Remove</button>
       `;
       row.querySelector('.remove').onclick = ()=> { row.remove(); updateLinksStorage(); };
-      [ ...row.querySelectorAll('input') ].forEach(el=> el.addEventListener('input', updateLinksStorage));
+      [...row.querySelectorAll('input')].forEach(el => el.addEventListener('input', updateLinksStorage));
       linksContainer.appendChild(row);
     };
 
@@ -161,12 +158,10 @@
       localStorage.setItem('form_links', JSON.stringify(downloadLinks));
     };
 
-    // Restore links from localStorage
+    // Restore links
     const savedLinks = JSON.parse(localStorage.getItem('form_links') || '[]');
-    if(savedLinks.length){
-      linksContainer.innerHTML = '';
-      savedLinks.forEach(l=> addLinkRow(l.text, l.url));
-    } else { addLinkRow(); }
+    if(savedLinks.length){ linksContainer.innerHTML=''; savedLinks.forEach(l=> addLinkRow(l.text, l.url)); }
+    else addLinkRow();
 
     document.getElementById('addLink').onclick = ()=> addLinkRow();
 
@@ -198,11 +193,10 @@
       const quality = document.getElementById('quality').value;
       const trending = document.getElementById('trending').checked;
       const pinned = document.getElementById('pin').checked;
-      const releasedDate = document.getElementById('releasedDate').value; // yyyy-mm-dd
+      const releasedDate = document.getElementById('releasedDate').value;
 
       const status = document.getElementById('status');
 
-      // collect links
       const linkRows = Array.from(linksContainer.querySelectorAll('.link-item'));
       const downloadLinks = linkRows.map(r=>{
         const [t,u] = r.querySelectorAll('input');
@@ -215,22 +209,19 @@
       }
 
       const releasedAt = releasedDate ? new Date(releasedDate).getTime() : Date.now();
-
       const movie = { title, poster, subtitle, description, rating, quality, trending, pinned, releasedAt, downloadLinks };
 
       try{
         await push(ref(db,'movies'), movie);
         status.textContent = '✔ Saved!';
-        
-        // reset form + localStorage
+
+        // Reset form & localStorage
         fields.forEach(id=> { document.getElementById(id).value=''; localStorage.removeItem('form_'+id); });
         checkboxes.forEach(id=> { document.getElementById(id).checked=false; localStorage.removeItem('form_'+id); });
-        linksContainer.innerHTML = ''; addLinkRow(); localStorage.removeItem('form_links');
-        
+        linksContainer.innerHTML=''; addLinkRow(); localStorage.removeItem('form_links');
+
         setTimeout(()=> status.textContent='', 2000);
-      }catch(e){
-        alert('Error: '+e.message);
-      }
+      }catch(e){ alert('Error: '+e.message); }
     };
   </script>
 </body>
