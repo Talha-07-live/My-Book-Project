@@ -132,6 +132,7 @@
         margin-top: 10px;
         justify-content: center; /* Scearch bar in middle  */
       }
+      
       .footer {
         background: linear-gradient(90deg, #1b1530, #0e0b1a);
         color: #d5d1e6;
@@ -141,24 +142,32 @@
         font-size: 14px;
         margin-top: 30px;
         width: 100%;
+        display: flex;               /* ✅ flex যোগ করা */
+        justify-content: center;     /* ✅ horizontally center */
+        align-items: center;         /* ✅ vertically center */
+        flex-direction: column;      /* ✅ column এর জন্য */
       }
+      
       .footer .footer-inner {
         max-width: 1280px;
-        margin: 0 auto;
+        width: 100%;                 /* ✅ ensure full width */
         display: flex;
         flex-direction: column;
-        justify-content: center;   /* ✅ vertically center */
-        align-items: center;       /* ✅ horizontally center */
+        justify-content: center;
+        align-items: center;
         text-align: center;
       }
+      
       .footer p {
         margin: 4px 0;
       }
+      
       .footer .credit {
         margin-top: 6px;
         font-size: 13px;
         color: #8e88a8;
       }
+      
       @media (max-width: 600px) {
         .footer {
           font-size: 13px;
@@ -168,7 +177,7 @@
           font-size: 12px;
         }
       }
-      
+   
   </style>
 </head>
 <body>
