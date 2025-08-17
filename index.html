@@ -132,6 +132,32 @@
         margin-top: 10px;
         justify-content: center; /* Scearch bar in middle  */
       }
+      .footer {
+        background: linear-gradient(90deg, #1b1530, #0e0b1a);
+        color: #d5d1e6;
+        text-align: center;
+        padding: 20px 10px;
+        border-top: 1px solid #2a2348;
+        font-size: 14px;
+        margin-top: 30px;
+      }
+      .footer .footer-inner {
+        max-width: 1280px;
+        margin: 0 auto;
+      }
+      .footer .credit {
+        margin-top: 6px;
+        font-size: 13px;
+        color: #8e88a8;
+      }
+      @media (max-width: 600px) {
+        .footer {
+          font-size: 13px;
+          padding: 16px 8px;
+        }
+        .footer .credit {
+          font-size: 12px;
+        }
       
   </style>
 </head>
@@ -183,6 +209,13 @@
       <div id="m-links" class="links"></div>
     </div>
   </div>
+
+  <footer class="footer">
+  <div class="footer-inner">
+    <p>© 2025 Talha's Collection. All rights reserved.</p>
+    <p class="credit">Made with ❤️ by Talha</p>
+  </div>
+  </footer>
 
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
