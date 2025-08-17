@@ -132,25 +132,25 @@
         margin-top: 10px;
         justify-content: center; /* Scearch bar in middle  */
       }
-      
+     /* ===== Footer Styles ===== */
       .footer {
         background: linear-gradient(90deg, #1b1530, #0e0b1a);
         color: #d5d1e6;
-        text-align: center;
         padding: 20px 10px;
         border-top: 1px solid #2a2348;
         font-size: 14px;
-        margin-top: 30px;
         width: 100%;
-        display: flex;               /* ✅ flex যোগ করা */
-        justify-content: center;     /* ✅ horizontally center */
-        align-items: center;         /* ✅ vertically center */
-        flex-direction: column;      /* ✅ column এর জন্য */
+        display: flex;
+        justify-content: center; /* horizontally center */
+        align-items: center;     /* vertically center */
+        flex-direction: column;
+        box-sizing: border-box;
       }
       
       .footer .footer-inner {
         max-width: 1280px;
-        width: 100%;                 /* ✅ ensure full width */
+        width: 100%;
+        margin: 0 auto;         /* centered in large screens */
         display: flex;
         flex-direction: column;
         justify-content: center;
@@ -168,16 +168,34 @@
         color: #8e88a8;
       }
       
-      @media (max-width: 600px) {
+      /* ===== Responsive ===== */
+      @media (max-width: 1024px) {
+        .footer {
+          font-size: 14px;
+          padding: 18px 12px;
+        }
+      }
+      
+      @media (max-width: 768px) {
         .footer {
           font-size: 13px;
-          padding: 16px 8px;
+          padding: 16px 10px;
         }
         .footer .credit {
           font-size: 12px;
         }
       }
-   
+      
+      @media (max-width: 480px) {
+        .footer {
+          font-size: 12px;
+          padding: 14px 8px;
+        }
+        .footer .credit {
+          font-size: 11px;
+        }
+      }
+      
   </style>
 </head>
 <body>
@@ -234,6 +252,7 @@
     <p>© 2020-2025 Talha's Collection. All rights reserved.</p>
     <p class="credit">Made with ❤️ by Talha</p>
   </div>
+  </footer>
 
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
