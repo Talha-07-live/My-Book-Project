@@ -147,7 +147,12 @@
         margin: 0 auto;
         display: flex;
         flex-direction: column;
-        align-items: center;
+        justify-content: center;   /* ✅ vertically center */
+        align-items: center;       /* ✅ horizontally center */
+        text-align: center;
+      }
+      .footer p {
+        margin: 4px 0;
       }
       .footer .credit {
         margin-top: 6px;
