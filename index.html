@@ -119,7 +119,7 @@
         margin-top: 10px;
         justify-content: center;
       }
-      .footer.footer {
+      footer.footer {
         background: linear-gradient(90deg, #1b1530, #0e0b1a);
         color: #d5d1e6;
         padding: 20px 10px;
@@ -128,20 +128,30 @@
         width: 100%;
         box-sizing: border-box;
         margin-top: auto; /* Push footer to bottom */
-    }
-    .footer .footer-inner {
-        max-width: 1280px;
-        margin: 0 auto;           /* horizontally centered */
-        text-align: center;        /* text centered */
-        display: block;            /* flex removed */
-    }
-    .footer p { margin: 4px 0; }
-    .footer .credit { margin-top: 6px; font-size: 13px; color: #8e88a8; }
-
-    /* Responsive Footer Text */
-    @media (max-width: 1024px) { .footer { font-size: 14px; padding: 18px 12px; } }
-    @media (max-width: 768px) { .footer { font-size: 13px; padding: 16px 10px; } .footer .credit { font-size: 12px; } }
-    @media (max-width: 480px) { .footer { font-size: 12px; padding: 14px 8px; } .footer .credit { font-size: 11px; } }
+        text-align: center; /* Center text horizontally */
+      }
+      
+      .footer .footer-inner {
+        max-width: 1280px;   /* Limit width */
+        margin: 0 auto;      /* Center horizontally */
+        text-align: center;  /* Ensure inner text is centered */
+        display: block;      /* Remove flex alignment issues */
+      }
+      
+      .footer p {
+        margin: 4px 0;
+      }
+      
+      .footer .credit {
+        margin-top: 6px;
+        font-size: 13px;
+        color: #8e88a8;
+      }
+      
+      /* Responsive */
+      @media (max-width: 1024px) { .footer { font-size: 14px; padding: 18px 12px; } }
+      @media (max-width: 768px) { .footer { font-size: 13px; padding: 16px 10px; } .footer .credit { font-size: 12px; } }
+      @media (max-width: 480px) { .footer { font-size: 12px; padding: 14px 8px; } .footer .credit { font-size: 11px; } }
 
   </style>
 </head>
