@@ -19,7 +19,7 @@
     .row{display:grid;gap:12px;grid-template-columns:1fr}
     @media(min-width:720px){ .row{grid-template-columns:1fr 1fr} }
     label{font-weight:700;font-size:14px;margin-bottom:6px;display:block}
-    input[type="text"], input[type="url"], input[type="date"], textarea, select{
+    input[type="text"], input[type="url"], input[type="date"], input[type="password"], input[type="email"], textarea, select{
       width:100%;background:#0d0a1a;border:1px solid #2a2348;color:#fff;padding:12px 14px;border-radius:10px;outline:none;transition:.2s
     }
     textarea{min-height:110px;resize:vertical}
@@ -32,20 +32,25 @@
     @media(max-width:560px){ .link-item{grid-template-columns:1fr} }
     .remove{background:#2a1f3f;border:1px solid #3b2f5c;color:#fff;border-radius:8px;padding:10px 12px;cursor:pointer}
 
-    .login{display:flex;gap:8px;align-items:center}
+    .login{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
     .ok{color:#33d69f;font-weight:700}
+    .topbar{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px}
   </style>
 </head>
 <body>
   <div class="wrap">
-    <h1>Talha's Panel</h1>
+    <div class="topbar">
+      <h1>Talha's Panel</h1>
+      <button class="ghost" id="logout-btn" style="display:none">Logout</button>
+    </div>
 
     <div class="card" id="login-card">
       <div class="login">
+        <input type="email" id="admin-email" placeholder="Admin Email (e.g. you@example.com)" />
         <input type="password" id="admin-pass" placeholder="Enter Admin Password" />
         <button class="btn" id="login-btn">Login</button>
       </div>
-      <p style="color:#a7a4b4;margin-top:11px">Welcome Talha<code></p>
+      <p style="color:#a7a4b4;margin-top:11px">Welcome Talha</p>
     </div>
 
     <div class="card" id="form-card" style="display:none">
@@ -111,128 +116,162 @@
   </div>
 
   <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
-    import { getDatabase, ref, push } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
+    import { getDatabase, ref, push } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
+    import { getAuth, onAuthStateChanged, signInWithEmailAndPassword, signOut } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
 
-    const firebaseConfig = {
-      apiKey: "AIzaSyDpiN0OV1aD709Q987PymfOOp_lcW6Hid8",
-      authDomain: "my-book-project-c5a17.firebaseapp.com",
-      databaseURL: "https://my-book-project-c5a17-default-rtdb.asia-southeast1.firebasedatabase.app",
-      projectId: "my-book-project-c5a17",
-      storageBucket: "my-book-project-c5a17.appspot.com",
-      messagingSenderId: "422603504433",
-      appId: "1:422603504433:web:e6870a7d2c57c045eb0e10",
-      measurementId: "G-F763MR7FR9"
-    };
+    const firebaseConfig = {
+      apiKey: "AIzaSyDpiN0OV1aD709Q987PymfOOp_lcW6Hid8",
+      authDomain: "my-book-project-c5a17.firebaseapp.com",
+      databaseURL: "https://my-book-project-c5a17-default-rtdb.asia-southeast1.firebasedatabase.app",
+      projectId: "my-book-project-c5a17",
+      storageBucket: "my-book-project-c5a17.appspot.com",
+      messagingSenderId: "422603504433",
+      appId: "1:422603504433:web:e6870a7d2c57c045eb0e10",
+      measurementId: "G-F763MR7FR9"
+    };
 
-    const app = initializeApp(firebaseConfig);
-    const db = getDatabase(app);
+    const ADMIN_UID   = "PDK5rMhfUAc2mFA7VwKh3EtItov1";
 
-    const ADMIN_PASS = "12345"; // <-- CHANGE THIS
+    const app  = initializeApp(firebaseConfig);
+    const db   = getDatabase(app);
+    const auth = getAuth(app);
 
-    const loginCard = document.getElementById('login-card');
-    const formCard  = document.getElementById('form-card');
-    document.getElementById('login-btn').onclick = () => {
-      const pass = (document.getElementById('admin-pass').value||'').trim();
-      if(pass === ADMIN_PASS){ loginCard.style.display='none'; formCard.style.display='block'; }
-      else alert('Wrong Password!');
-    };
+    const loginCard = document.getElementById('login-card');
+    const formCard  = document.getElementById('form-card');
+    const logoutBtn = document.getElementById('logout-btn');
 
-    // Links UI helpers
-    const linksContainer = document.getElementById('links-container');
-    const addLinkRow = (text='', url='') => {
-      const row = document.createElement('div');
-      row.className = 'link-item';
-      row.innerHTML = `
-        <input type="text" placeholder="Text e.g. 720p" value="${text.replaceAll('"','&quot;')}">
-        <input type="url"  placeholder="https://…" value="${url.replaceAll('"','&quot;')}">
-        <button class="remove" type="button">Remove</button>
-      `;
-      row.querySelector('.remove').onclick = ()=> { row.remove(); updateLinksStorage(); };
-      [ ...row.querySelectorAll('input') ].forEach(el=> el.addEventListener('input', updateLinksStorage));
-      linksContainer.appendChild(row);
-    };
+    const emailInput = document.getElementById('admin-email');
+    const passInput  = document.getElementById('admin-pass');
 
-    const updateLinksStorage = () => {
-      const linkRows = Array.from(linksContainer.querySelectorAll('.link-item'));
-      const downloadLinks = linkRows.map(r=>{
-        const [t,u] = r.querySelectorAll('input');
-        return { text: t.value.trim(), url: u.value.trim() };
-      }).filter(x=> x.url);
-      localStorage.setItem('form_links', JSON.stringify(downloadLinks));
-    };
+    onAuthStateChanged(auth, (user) => {
+      if (user && user.uid === ADMIN_UID) {
+        loginCard.style.display = 'none';
+        formCard.style.display  = 'block';
+        logoutBtn.style.display = 'inline-flex';
+      } else {
+        formCard.style.display  = 'none';
+        loginCard.style.display = 'block';
+        logoutBtn.style.display = 'none';
+      }
+    });
 
-    // Restore links from localStorage
-    const savedLinks = JSON.parse(localStorage.getItem('form_links') || '[]');
-    if(savedLinks.length){
-      linksContainer.innerHTML = '';
-      savedLinks.forEach(l=> addLinkRow(l.text, l.url));
-    } else { addLinkRow(); }
+    document.getElementById('login-btn').onclick = async () => {
+      const email = (emailInput.value || "").trim();
+      const pass  = (passInput.value  || "").trim();
 
-    document.getElementById('addLink').onclick = ()=> addLinkRow();
+      if(!email || !pass){
+        alert("Enter email and password");
+        return;
+      }
 
-    // Input fields persistence
-    const fields = ['title','poster','subtitle','description','rating','quality','releasedDate'];
-    const checkboxes = ['trending','pin'];
+      try{
+        const cred = await signInWithEmailAndPassword(auth, email, pass);
+        if(cred.user.uid !== ADMIN_UID){
+          await signOut(auth);
+          alert("You are not the admin.");
+        }
+      }catch(err){
+        alert("Login failed: " + err.message);
+      }
+    };
 
-    fields.forEach(id=>{
-      const el = document.getElementById(id);
-      const saved = localStorage.getItem('form_'+id);
-      if(saved) el.value = saved;
-      el.addEventListener('input', ()=> localStorage.setItem('form_'+id, el.value));
-    });
+    logoutBtn.onclick = async () => { try{ await signOut(auth); }catch(_){} };
 
-    checkboxes.forEach(id=>{
-      const el = document.getElementById(id);
-      const saved = localStorage.getItem('form_'+id);
-      if(saved) el.checked = saved === 'true';
-      el.addEventListener('change', ()=> localStorage.setItem('form_'+id, el.checked));
-    });
+    const linksContainer = document.getElementById('links-container');
+    const addLinkRow = (text='', url='') => {
+      const row = document.createElement('div');
+      row.className = 'link-item';
+      row.innerHTML = `
+        <input type="text" placeholder="Text e.g. 720p" value="${text.replaceAll('"','&quot;')}">
+        <input type="url"  placeholder="https://…" value="${url.replaceAll('"','&quot;')}">
+        <button class="remove" type="button">Remove</button>
+      `;
+      row.querySelector('.remove').onclick = ()=> { row.remove(); updateLinksStorage(); };
+      [ ...row.querySelectorAll('input') ].forEach(el=> el.addEventListener('input', updateLinksStorage));
+      linksContainer.appendChild(row);
+    };
 
-    // Save movie
-    document.getElementById('addMovie').onclick = async () => {
-      const title = document.getElementById('title').value.trim();
-      const poster = document.getElementById('poster').value.trim();
-      const subtitle = document.getElementById('subtitle').value.trim();
-      const description = document.getElementById('description').value.trim();
-      const rating = document.getElementById('rating').value.trim();
-      const quality = document.getElementById('quality').value;
-      const trending = document.getElementById('trending').checked;
-      const pinned = document.getElementById('pin').checked;
-      const releasedDate = document.getElementById('releasedDate').value; // yyyy-mm-dd
+    const updateLinksStorage = () => {
+      const linkRows = Array.from(linksContainer.querySelectorAll('.link-item'));
+      const downloadLinks = linkRows.map(r=>{
+        const [t,u] = r.querySelectorAll('input');
+        return { text: t.value.trim(), url: u.value.trim() };
+      }).filter(x=> x.url);
+      localStorage.setItem('form_links', JSON.stringify(downloadLinks));
+    };
 
-      const status = document.getElementById('status');
+    const savedLinks = JSON.parse(localStorage.getItem('form_links') || '[]');
+    if(savedLinks.length){
+      linksContainer.innerHTML = '';
+      savedLinks.forEach(l=> addLinkRow(l.text, l.url));
+    } else { addLinkRow(); }
 
-      // collect links
-      const linkRows = Array.from(linksContainer.querySelectorAll('.link-item'));
-      const downloadLinks = linkRows.map(r=>{
-        const [t,u] = r.querySelectorAll('input');
-        return { text: (t.value||'').trim(), url: (u.value||'').trim() };
-      }).filter(x=> x.url);
+    document.getElementById('addLink').onclick = ()=> addLinkRow();
 
-      if(!title || !poster || !description || downloadLinks.length===0){
-        alert('Please fill Title, Poster, Description, and at least one Link (text + url).');
-        return;
-      }
+    const fields = ['title','poster','subtitle','description','rating','quality','releasedDate'];
+    const checkboxes = ['trending','pin'];
 
-      const releasedAt = releasedDate ? new Date(releasedDate).getTime() : Date.now();
+    fields.forEach(id=>{
+      const el = document.getElementById(id);
+      const saved = localStorage.getItem('form_'+id);
+      if(saved) el.value = saved;
+      el.addEventListener('input', ()=> localStorage.setItem('form_'+id, el.value));
+    });
 
-      const movie = { title, poster, subtitle, description, rating, quality, trending, pinned, releasedAt, downloadLinks };
+    checkboxes.forEach(id=>{
+      const el = document.getElementById(id);
+      const saved = localStorage.getItem('form_'+id);
+      if(saved) el.checked = saved === 'true';
+      el.addEventListener('change', ()=> localStorage.setItem('form_'+id, el.checked));
+    });
 
-      try{
-        await push(ref(db,'movies'), movie);
-        status.textContent = '✔ Saved!';
-        
-        // reset form + localStorage
-        fields.forEach(id=> { document.getElementById(id).value=''; localStorage.removeItem('form_'+id); });
-        checkboxes.forEach(id=> { document.getElementById(id).checked=false; localStorage.removeItem('form_'+id); });
-        linksContainer.innerHTML = ''; addLinkRow(); localStorage.removeItem('form_links');
-        
-        setTimeout(()=> status.textContent='', 2000);
-      }catch(e){
-        alert('Error: '+e.message);
-      }
-    };
-  </script>
+    document.getElementById('addMovie').onclick = async () => {
+      const user = auth.currentUser;
+      if(!user || user.uid !== ADMIN_UID){
+        alert('Only admin can save.');
+        return;
+      }
+
+      const title = document.getElementById('title').value.trim();
+      const poster = document.getElementById('poster').value.trim();
+      const subtitle = document.getElementById('subtitle').value.trim();
+      const description = document.getElementById('description').value.trim();
+      const rating = document.getElementById('rating').value.trim();
+      const quality = document.getElementById('quality').value;
+      const trending = document.getElementById('trending').checked;
+      const pinned = document.getElementById('pin').checked;
+      const releasedDate = document.getElementById('releasedDate').value;
+
+      const status = document.getElementById('status');
+
+      const linkRows = Array.from(linksContainer.querySelectorAll('.link-item'));
+      const downloadLinks = linkRows.map(r=>{
+        const [t,u] = r.querySelectorAll('input');
+        return { text: (t.value||'').trim(), url: (u.value||'').trim() };
+      }).filter(x=> x.url);
+
+      if(!title || !poster || !description || downloadLinks.length===0){
+        alert('Please fill Title, Poster, Description, and at least one Link (text + url).');
+        return;
+      }
+
+      const releasedAt = releasedDate ? new Date(releasedDate).getTime() : Date.now();
+      const movie = { title, poster, subtitle, description, rating, quality, trending, pinned, releasedAt, downloadLinks };
+
+      try{
+        await push(ref(db,'movies'), movie);
+        status.textContent = '✔ Saved!';
+
+        fields.forEach(id=> { document.getElementById(id).value=''; localStorage.removeItem('form_'+id); });
+        checkboxes.forEach(id=> { document.getElementById(id).checked=false; localStorage.removeItem('form_'+id); });
+        linksContainer.innerHTML = ''; addLinkRow(); localStorage.removeItem('form_links');
+
+        setTimeout(()=> status.textContent='', 2000);
+      }catch(e){
+        alert('Error: '+e.message);
+      }
+    };
+  </script>
 </body>
 </html>
