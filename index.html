@@ -132,31 +132,6 @@
         margin-top: 10px;
         justify-content: center; /* Scearch bar in middle  */
       }
-       /* ===== Responsive tweaks ===== */
-      @media (max-width: 1024px) {
-        .footer {
-          font-size: 14px;
-          padding: 18px 12px;
-      }
-
-      @media (max-width: 768px) {
-        .footer {
-          font-size: 13px;
-          padding: 16px 10px;
-        }
-        .footer .credit {
-          font-size: 12px;
-      }
-
-      @media (max-width: 480px) {
-        .footer {
-          font-size: 12px;
-          padding: 14px 8px;
-        }
-        .footer .credit {
-          font-size: 11px;
-      }
-     /* ===== Footer Styles ===== */
       .footer {
         background: linear-gradient(90deg, #1b1530, #0e0b1a);
         color: #d5d1e6;
@@ -170,28 +145,48 @@
         flex-direction: column;
         box-sizing: border-box;
       }
-      
       .footer .footer-inner {
         max-width: 1280px;
         width: 100%;
-        margin: 0 auto;         /* centered in large screens */
+        margin: 0 auto;         
         display: flex;
         flex-direction: column;
         justify-content: center;
         align-items: center;
         text-align: center;
       }
-      
       .footer p {
         margin: 4px 0;
       }
-
       .footer .credit {
         margin-top: 6px;
         font-size: 13px;
         color: #8e88a8;
       }
-      
+      @media (max-width: 1024px) {
+        .footer {
+          font-size: 14px;
+          padding: 18px 12px;
+        }
+      }
+      @media (max-width: 768px) {
+        .footer {
+          font-size: 13px;
+          padding: 16px 10px;
+        }
+        .footer .credit {
+          font-size: 12px;
+        }
+      }
+      @media (max-width: 480px) {
+        .footer {
+          font-size: 12px;
+          padding: 14px 8px;
+        }
+        .footer .credit {
+          font-size: 11px;
+        }
+      }
   </style>
 </head>
 <body>
