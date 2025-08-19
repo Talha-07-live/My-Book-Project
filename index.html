@@ -20,24 +20,10 @@
       --shadow:0 10px 30px rgba(0,0,0,.35);
     }
     *{box-sizing:border-box}
-    html,body{
-      height: 100%;
-      padding: 0;
-      margin:0;
-      font-family:Poppins, system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
-      background:radial-gradient(1000px 600px at -10% -10%, #201a35 0%, transparent 60%), 
-                 radial-gradient(800px 500px at 120% 0%, #1b1530 0%, transparent 60%), 
-                 var(--bg);
-      color:#fff;
-      padding-bottom: 60px;
-    }
-    .container{max-width:1280px;margin:0 auto;padding:10px 12px 40px;}
-    
-    .content {
-      padding: 20px;
-    }
+    html,body{height:100%;margin:0;font-family:Poppins, system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;background:radial-gradient(1000px 600px at -10% -10%, #201a35 0%, transparent 60%), radial-gradient(800px 500px at 120% 0%, #1b1530 0%, transparent 60%), var(--bg);color:#fff}
+    .container{max-width:1280px;margin:0 auto;padding:18px 16px 62px 16}
 
-    .header{display:flex;align-items:center;gap:5px;flex-wrap:wrap;position:sticky;top:0;z-index:40;background:linear-gradient(180deg, rgba(12,7,20,.95), rgba(12,7,20,.65) 60%, transparent);backdrop-filter:saturate(140%) blur(6px)}
+    .header{display:flex;align-items:center;gap:14px;flex-wrap:wrap;position:sticky;top:0;z-index:40;background:linear-gradient(180deg, rgba(12,7,20,.95), rgba(12,7,20,.65) 60%, transparent);backdrop-filter:saturate(140%) blur(6px)}
     .logo{font-weight:800;letter-spacing:1px;font-size:clamp(20px,3.2vw,34px);padding:10px}
     .logo span{background:linear-gradient(90deg,#ff6b6b,#feca57,#1dd1a1,#48dbfb,#5f27cd); -webkit-background-clip:text; background-clip:text; color:transparent}
 
@@ -124,7 +110,6 @@
       border-top: 1px solid #2a2348;
       font-size: 10px;
       width: 100%;
-      height: 60px;
       display: flex;
       justify-content: center;
       z-index: 9999;
@@ -141,10 +126,19 @@
         color: inherit;
     }
     @media (max-width: 600px){
-      .header{justify-content: center;}
-      .logo-link{display: inline-block;text-align: center;}
-      .searchbar{width: 100%;margin-top: 10px;justify-content: center;}
-    }
+      .header{
+        justify-content: center;
+      }
+      .logo-link{
+        display: inline-block;
+        text-align: center;
+      }
+      .searchbar{
+        width: 100%;
+        margin-top: 10px;
+        justify-content: center;
+      }
+      
   </style>
 </head>
 <body>
@@ -198,7 +192,7 @@
   <footer class="footer">
     <div class="footer-inner">
       <p>© 2020-2025 Talha's Collection. All rights reserved.</p>
-      <p class="credit">Made with <span class="heart">❤️</span> by Talha</p>
+       <p class="credit">Made with <span class="heart">❤️</span> by Talha</p>
     </div>
   </footer>
 
