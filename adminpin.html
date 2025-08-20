@@ -1,0 +1,602 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Admin Eyes</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="icon" href="https://s10.gifyu.com/images/SrMU9.png">
+<style>
+:root{
+  --bg:#0c0714;
+  --card:#161129;
+  --muted:#a7a4b4;
+  --primary:#19d3ff;
+  --primary-2:#4f46e5;
+  --accent:#ff6b6b;
+  --radius:16px;
+  --shadow:0 10px 30px rgba(0,0,0,.35);
+}
+*{box-sizing:border-box;}
+html,body{height:100%;margin:0;font-family:Poppins, system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;background:radial-gradient(1000px 600px at -10% -10%, #201a35 0%, transparent 60%), radial-gradient(800px 500px at 120% 0%, #1b1530 0%, transparent 60%), var(--bg);color:#fff;}
+.container{max-width:1280px;margin:0 auto;padding:0px 14px;}
+.section{padding:0px 16px 65px;}
+.header{display:flex;align-items:center;gap:4px;flex-wrap:wrap;position:sticky;top:0;z-index:40;background:linear-gradient(180deg, rgba(12,7,20,.95), rgba(12,7,20,.65) 60%, transparent);backdrop-filter:saturate(140%) blur(6px);padding:10px 16px;}
+.logo{font-weight:800;letter-spacing:1px;font-size:clamp(20px,3.2vw,34px);}
+.logo span{background:linear-gradient(90deg,#ff6b6b,#feca57,#1dd1a1,#48dbfb,#5f27cd);-webkit-background-clip:text;background-clip:text;color:transparent;}
+.logo .tld{display:inline-block;font-size:0.8em;color:var(--muted);margin-left:4px;}
+.searchbar{margin-left:auto;display:flex;gap:8px;align-items:center;flex:1;justify-content:flex-end;position:relative;padding:10px 0;}
+.searchbar-inner{display:flex;gap:10px;align-items:center;width:100%;max-width:820px;}
+.searchbar input{flex:1;min-width:0;background:#0d0a1a;border:1px solid #2a2348;color:#fff;padding:12px 14px;border-radius:999px;outline:none;transition:.18s;font-size:15px;}
+.searchbar input::placeholder{color:#7f7a95;}
+.searchbar input:focus{border-color:#5b54ff;box-shadow:0 0 0 4px rgba(79,70,229,.12);}
+.btn{border:0;border-radius:999px;padding:10px 14px;font-weight:800;cursor:pointer;background:linear-gradient(90deg,var(--primary),var(--primary-2));color:#0b0b0b;white-space:nowrap;}
+.sugg{position:absolute;left:0;right:0;margin:auto;top:100%;width:min(820px,calc(100% - 32px));background:#0d0a1a;border:1px solid #2a2348;border-radius:12px;margin-top:8px;box-shadow:var(--shadow);max-height:320px;overflow:auto;display:none;z-index:60;}
+.sugg.show{display:block;}
+.sugg-item{padding:10px 12px;cursor:pointer;border-bottom:1px solid rgba(255,255,255,.04);display:flex;justify-content:space-between;gap:10px;}
+.sugg-item:hover{background:#15102a;}
+.sugg-item small{color:#9e99b6;}
+.section-title{display:flex;align-items:center;gap:10px;background:#1b1530;border:1px solid #2a2348;padding:10px 14px;border-radius:12px;box-shadow:var(--shadow);margin-top:12px;}
+.section-title .flame{width:28px;height:28px;border-radius:8px;background:#1f1838;display:grid;place-items:center;}
+.section-title h2{margin:0;font-size:clamp(16px,2.5vw,20px);letter-spacing:.2px;}
+.request-btn{margin-left:auto;text-decoration:none;color:#0b0b0b;background:linear-gradient(90deg,var(--primary),var(--primary-2));padding:10px 14px;border-radius:12px;font-weight:800;}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:18px;margin-top:16px;}
+@media (min-width:480px){.grid{grid-template-columns:repeat(auto-fit,minmax(200px,1fr));}}
+.card{position:relative;border-radius:16px;overflow:hidden;background:var(--card);border:1px solid #2a2348;box-shadow:var(--shadow);transition:transform .25s ease, box-shadow .25s ease;cursor:pointer;}
+.card:hover{transform:translateY(-4px) scale(1.02);box-shadow:0 14px 40px rgba(0,0,0,.45);}
+.thumb{aspect-ratio:2/3;width:100%;object-fit:cover;display:block;filter:saturate(1.05);vertical-align:middle;}
+.grad{position:absolute;inset:auto 0 0 0;height:52%;background:linear-gradient(180deg,transparent,rgba(0,0,0,.9));pointer-events:none;z-index:5;}
+.ribbon{position:absolute;top:10px;left:10px;background:linear-gradient(90deg,#ff6b6b,#f06595);color:#fff;font-weight:800;padding:6px 10px;border-radius:8px;box-shadow:0 6px 18px rgba(0,0,0,.35);font-size:12px;letter-spacing:.4px;z-index:20;}
+.badge{position:absolute;bottom:12px;right:12px;background:#1b1530;border:1px solid #2a2348;padding:6px 8px;border-radius:8px;color:#d6d2e6;font-weight:700;font-size:12px;z-index:20;}
+.age{position:absolute;bottom:12px;left:12px;display:flex;align-items:center;gap:6px;background:rgba(0,0,0,.45);backdrop-filter:blur(6px);padding:6px 10px;border-radius:999px;font-size:12px;z-index:20;}
+.meta{padding:10px 12px 14px;}
+.title{font-weight:800;font-size:clamp(13px,2.4vw,16px);line-height:1.35;margin:0 0 6px 0;color:#faf8ff;}
+.subtitle{margin:0;color:var(--muted);font-size:clamp(10px,2vw,12px);}
+.modal{position:fixed;inset:0;background:rgba(0,0,0,.75);display:none;align-items:center;justify-content:center;padding:16px;z-index:99;}
+.modal.show{display:flex;}
+.sheet{width:min(980px,100%);background:#140f26;border:1px solid #302a55;border-radius:20px;overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,.55);}
+.sheet-head{display:grid;grid-template-columns:140px 1fr;gap:14px;padding:14px;}
+@media (min-width:720px){.sheet-head{grid-template-columns:200px 1fr;gap:16px;padding:16px;}}
+.sheet-head img{width:100%;border-radius:14px;border:1px solid #2a2348;}
+.sheet-head .info h3{margin:0 0 8px 0;font-size:clamp(18px,3vw,24px);}
+.sheet-head .info p{margin:6px 0;color:#d5d1e6;}
+.rating{display:inline-flex;align-items:center;gap:6px;background:rgba(255,255,255,.06);padding:6px 10px;border-radius:999px;font-weight:800;}
+.links{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:10px;padding:12px 16px 18px;background:#0e0b1a;border-top:1px solid #2a2348;max-height:40.5vh;overflow:auto;}
+.d-btn{display:flex;align-items:center;justify-content:center;gap:8px;text-decoration:none;color:#0b0b0b;background:linear-gradient(90deg,var(--primary),var(--primary-2));padding:12px 14px;border-radius:12px;font-weight:800;transition:transform .2s ease;}
+.d-btn:hover{transform:translateY(-2px) scale(1.02);}
+.close{position:absolute;top:14px;right:16px;border:0;background:#1b1530;border:1px solid #2a2348;color:#fff;padding:8px 12px;border-radius:999px;cursor:pointer;}
+.muted{color:var(--muted);}
+.skeleton{position:relative;overflow:hidden;background:#1a1530;border-radius:16px;border:1px solid #2a2348;aspect-ratio:2/3;}
+.skeleton::after{content:"";position:absolute;inset:0;background:linear-gradient(90deg,transparent,rgba(255,255,255,.06),transparent);transform:translateX(-100%);animation:shimmer 1.4s infinite;}
+@keyframes shimmer{to{transform:translateX(100%);}}
+.sentinel{height:1px;}
+.pin-btn{
+  position:absolute;top:10px;right:10px;z-index:22;width:36px;height:36px;border-radius:10px;border:1px solid rgba(255,255,255,.06);
+  display:grid;place-items:center;background:rgba(0,0,0,.35);backdrop-filter: blur(6px);cursor:pointer;
+}
+.pin-btn svg{width:18px;height:18px;display:block;pointer-events:none;}
+.pin-btn[aria-pressed="true"]{background:linear-gradient(90deg,#ffd166,#ff8c42);border:none;}
+@media (max-width:760px){.searchbar{padding:10px 12px}.searchbar-inner{flex-direction:row;gap:8px}.sugg{top: calc(100% + 6px);left:8px;right:8px;width:calc(100% - 16px)}.logo{font-size:20px;padding:8px}.section-title{padding:10px}.sheet{margin:12px}}
+@media (max-width:460px){.searchbar-inner{flex-direction:column-reverse;align-items:stretch}.searchbar input{border-radius:12px;padding:10px;font-size:15px}.btn{width:100%;padding:10px}.sugg{left:10px;right:10px;width:calc(100% - 20px)}.section-title{flex-direction:row;align-items:center;gap:8px}.grid{gap:12px}}
+@media (max-width:600px){.header{justify-content:center}.logo-link{text-align:center;display:inline-block}.searchbar{width:100%;margin-top:10px;justify-content:center;}}
+.footer{position:fixed;bottom:0;left:0;width:100%;background: linear-gradient(90deg, #1b1530, #0e0b1a);color:#d5d1e6;padding:5px 10px;border-top:1px solid #2a2348;font-size:8px;display:flex;justify-content:center;z-index:9999;}
+.footer-inner{max-width:1280px;width:100%;text-align:center;}
+.logo-link{color:inherit;text-decoration:none;}
+.credit .heart{color:#ff6b6b;animation:beat 1s infinite alternate;}
+@keyframes beat{to{transform:scale(1.2);}}   
+  </style>
+</head>
+<body>
+  <header class="container header">
+    <div class="logo">
+      <a href="https://talhas.collection.page.gd/" class="logo-link"><span>Talha's Collection</span><span class="tld"></span></a>
+    </div>
+    <div class="searchbar" role="search">
+      <div class="searchbar-inner">
+        <input id="search" type="search" placeholder="Search …" aria-label="Search" autocomplete="off" />
+        <button class="btn" id="searchBtn">SEARCH</button>
+      </div>
+      <div id="sugg" class="sugg" role="listbox" aria-label="Suggestions"></div>
+    </div>
+  </header>
+
+  <main class="container section">
+    <div class="section-title">
+      <div class="flame">➕</div>
+      <h2 class="muted">Welcome</h2>
+      <a href="https://group.talhascollectionjointrequest.xo.je/" target="_blank" class="request-btn">
+          Joint Our Movies, Series, Anime Request Group
+      </a>
+    </div>
+  </main>
+
+  <main class="container section">
+    <div class="section-title">
+      <div class="flame">🔥</div>
+      <h2>Latest Update</h2>
+    </div>
+    <div id="grid" class="grid"></div>
+    <div id="sentinel" class="sentinel"></div>
+  </main>
+
+  <div id="modal" class="modal" role="dialog" aria-modal="true" aria-labelledby="m-title">
+    <div class="sheet">
+      <button class="close" id="close">Close ✕</button>
+      <div class="sheet-head">
+        <img id="m-poster" alt="Poster" />
+        <div class="info">
+          <h3 id="m-title"></h3>
+          <p id="m-desc"></p>
+          <p class="rating">⭐ <span id="m-rating">—</span></p>
+        </div>
+      </div>
+      <div id="m-links" class="links"></div>
+    </div>
+  </div>
+
+  <footer class="footer">
+    <div class="footer-inner">
+      <p>© 2020-2025 Talha's Collection. All rights reserved.</p>
+       <p class="credit">Made with <span class="heart">❤️</span> by Talha</p>
+    </div>
+  </footer>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
+    import { getDatabase, ref, onValue } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
+
+    const firebaseConfig = {
+    apiKey: "AIzaSyDpiN0OV1aD709Q987PymfOOp_lcW6Hid8",
+    authDomain: "my-book-project-c5a17.firebaseapp.com",
+    databaseURL: "https://my-book-project-c5a17-default-rtdb.asia-southeast1.firebasedatabase.app",
+    projectId: "my-book-project-c5a17",
+    storageBucket: "my-book-project-c5a17.appspot.com",
+    messagingSenderId: "422603504433",
+    appId: "1:422603504433:web:e6870a7d2c57c045eb0e10",
+    measurementId: "G-F763MR7FR9"
+  };
+
+  const grid = document.getElementById('grid');
+  const sentinel = document.getElementById('sentinel');
+  const searchInput = document.getElementById('search');
+  const searchBtn = document.getElementById('searchBtn');
+  const sugg = document.getElementById('sugg');
+
+  const makeSkeletons = (n=12)=>{
+    grid.innerHTML = '';
+    for(let i=0;i<n;i++) grid.appendChild(Object.assign(document.createElement('div'),{className:'skeleton'}));
+  };
+  makeSkeletons();
+
+  const daysAgo = ts => {
+    if(!ts) return '';
+    const diff = Math.max(0, Date.now() - ts);
+    const d = Math.floor(diff / (1000*60*60*24));
+    if(d===0) return 'Today';
+    if(d===1) return '1 day ago';
+    return `${d} days ago`;
+  };
+  const clamp = (n,min,max)=> Math.min(max, Math.max(min, n));
+
+  function debounce(fn, delay=120){
+    let t; return (...a)=>{ clearTimeout(t); t=setTimeout(()=>fn(...a), delay); };
+  }
+  function throttle(fn, wait=200){
+    let last=0, timer; return (...a)=>{
+      const now=Date.now();
+      const remaining = wait - (now - last);
+      if(remaining<=0){ last=now; fn(...a); }
+      else if(!timer){ timer=setTimeout(()=>{ last=Date.now(); timer=null; fn(...a); }, remaining); }
+    };
+  }
+
+  function openDB(){
+    return new Promise((resolve, reject)=>{
+      const req = indexedDB.open('movieCacheDB', 2);
+      req.onerror = ()=> reject(req.error);
+      req.onsuccess = ()=> resolve(req.result);
+      req.onupgradeneeded = ()=>{
+        const db = req.result;
+        if(!db.objectStoreNames.contains('movies')){
+          db.createObjectStore('movies', { keyPath: 'id' });
+        }
+        if(!db.objectStoreNames.contains('meta')){
+          db.createObjectStore('meta', { keyPath: 'key' });
+        }
+      };
+    });
+  }
+  async function saveMoviesToDB(movies){
+    const db = await openDB();
+    const tx = db.transaction(['movies','meta'],'readwrite');
+    const s = tx.objectStore('movies');
+    s.clear();
+    movies.forEach(x=> s.put(x));
+    const m = tx.objectStore('meta');
+    m.put({key:'updatedAt', value: Date.now()});
+    return tx.complete;
+  }
+  async function updateMovieInDB(movie){
+    const db = await openDB();
+    const tx = db.transaction(['movies','meta'],'readwrite');
+    const s = tx.objectStore('movies');
+    s.put(movie);
+    // update meta timestamp
+    const m = tx.objectStore('meta');
+    m.put({key:'updatedAt', value: Date.now()});
+    return tx.complete;
+  }
+  async function getMoviesFromDB(){
+    const db = await openDB();
+    const tx = db.transaction('movies','readonly');
+    const s = tx.objectStore('movies');
+    return new Promise(res=>{ const r = s.getAll(); r.onsuccess=()=>res(r.result||[]); });
+  }
+  async function getMetaFromDB(key){
+    const db = await openDB();
+    const tx = db.transaction('meta','readonly');
+    const s = tx.objectStore('meta');
+    return new Promise(res=>{ const r = s.get(key); r.onsuccess=()=>res(r.result? r.result.value : null); });
+  }
+  async function saveMetaToDB(key, value){
+    const db = await openDB();
+    const tx = db.transaction('meta','readwrite');
+    const s = tx.objectStore('meta');
+    s.put({key, value});
+    return tx.complete;
+  }
+
+  let allMovies = [];
+  let filtered = [];
+  let pageSize = 10;
+  let page = 1;
+  let observer;
+  let imgObserver;
+
+  const setupImgObserver = ()=>{
+    imgObserver && imgObserver.disconnect();
+    imgObserver = new IntersectionObserver((entries)=>{
+      entries.forEach(entry=>{
+        if(entry.isIntersecting){
+          const img = entry.target;
+          const src = img.getAttribute('data-src');
+          if(src){
+            const load = ()=>{ img.src = src; img.removeAttribute('data-src'); };
+            if('requestIdleCallback' in window){ requestIdleCallback(load, {timeout: 500}); }
+            else setTimeout(load, 0);
+          }
+          imgObserver.unobserve(img);
+        }
+      });
+    },{rootMargin:'200px 0px'});
+  };
+
+  function sortWithPinned(arr){
+    // pinned first, then by releasedAt desc
+    arr.sort((a,b)=>{
+      if(a.pinned && !b.pinned) return -1;
+      if(!a.pinned && b.pinned) return 1;
+      return (b.releasedAt||0) - (a.releasedAt||0);
+    });
+  }
+
+  const render = debounce(()=>{
+    grid.innerHTML = '';
+    const total = filtered.length;
+    const upto = clamp(page*pageSize, 0, total);
+    if(!total){
+      const empty = document.createElement('p');
+      empty.style.color='#a7a4b4';
+      empty.style.gridColumn='1 / -1';
+      empty.textContent = 'No movies found.';
+      grid.appendChild(empty);
+      return;
+    }
+    const frag = document.createDocumentFragment();
+    for(let i=0;i<upto;i++){
+      const m = filtered[i];
+      const card = document.createElement('article');
+      card.className = 'card';
+      const img = document.createElement('img');
+      img.alt = m.title || 'Poster';
+      img.loading = 'lazy';
+      img.className = 'thumb';
+      img.setAttribute('data-src', m.poster || '');
+      img.src = 'data:image/gif;base64,R0lGODlhAQABAAAAACw=';
+      const grad = document.createElement('div'); grad.className = 'grad';
+      if((m.tags && Array.isArray(m.tags) && m.tags.includes('TRENDING')) || m.trending){
+        const ribbon = document.createElement('div'); ribbon.className='ribbon'; ribbon.textContent='TRENDING'; card.appendChild(ribbon);
+      }
+      const badge = document.createElement('div'); badge.className='badge'; badge.textContent = (m.quality || 'HD').toUpperCase();
+      const age = document.createElement('div'); age.className='age'; age.textContent = daysAgo(m.releasedAt) || (m.releasedAtText || '');
+      const meta = document.createElement('div'); meta.className='meta';
+      const t = document.createElement('p'); t.className='title'; t.textContent = m.title || 'Untitled';
+      const st = document.createElement('p'); st.className='subtitle'; st.textContent = m.subtitle || (m.description? String(m.description).slice(0,80): '') || '';
+      meta.appendChild(t); meta.appendChild(st);
+
+      // pin button
+      const pin = document.createElement('button');
+      pin.className = 'pin-btn';
+      pin.type = 'button';
+      pin.title = m.pinned ? 'Unpin' : 'Pin';
+      pin.setAttribute('aria-pressed', !!m.pinned);
+      pin.innerHTML = m.pinned ? `<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 2l3 7h6l-5 4 2 7-6-4-6 4 2-7-5-4h6l3-7z" fill="#fff"/></svg>` :
+                                 `<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 2l3 7h6l-5 4 2 7-6-4-6 4 2-7-5-4h6l3-7z" stroke="#ddd" stroke-width="1.2" fill="none"/></svg>`;
+      // clicking pin should not open modal
+      pin.addEventListener('click', (ev)=>{
+        ev.stopPropagation();
+        togglePin(m);
+      });
+
+      card.appendChild(img); card.appendChild(grad); card.appendChild(age); card.appendChild(badge); card.appendChild(meta);
+      card.appendChild(pin);
+      card.addEventListener('click',()=>openModal(m));
+      frag.appendChild(card);
+    }
+    grid.appendChild(frag);
+    setupImgObserver();
+    grid.querySelectorAll('img[data-src]').forEach(img=> imgObserver.observe(img));
+  }, 120);
+
+  const setupInfiniteScroll = ()=>{
+    observer && observer.disconnect();
+    observer = new IntersectionObserver((entries)=>{
+      entries.forEach(entry=>{
+        if(entry.isIntersecting){
+          const totalPages = Math.ceil(filtered.length / pageSize);
+          if(page < totalPages){
+            page += 1;
+            render();
+          }
+        }
+      });
+    }, { rootMargin: '400px 0px' });
+    observer.observe(sentinel);
+  };
+
+  const doSearch = ()=>{
+    const q = searchInput.value.trim().toLowerCase();
+    if(!q){ filtered = allMovies; page = 1; hideSuggestions(); render(); return; }
+    filtered = allMovies.filter(m => (
+      (m.title||'').toLowerCase().includes(q) || (m.subtitle||'').toLowerCase().includes(q)
+    ));
+    page = 1;
+    render();
+    showSuggestions(q);
+  };
+  const throttledSearch = throttle(doSearch, 220);
+  const debouncedInput = debounce(()=> showSuggestions(searchInput.value.trim().toLowerCase()), 160);
+  searchBtn.addEventListener('click', doSearch);
+  searchInput.addEventListener('input', (e)=>{ throttledSearch(); debouncedInput(); });
+  searchInput.addEventListener('keydown', (e)=>{ if(e.key==='Enter'){ doSearch(); hideSuggestions(); } });
+  document.addEventListener('click', (e)=>{ if(!sugg.contains(e.target) && e.target!==searchInput) hideSuggestions(); });
+
+  function showSuggestions(q){
+    if(!q){ hideSuggestions(); return; }
+    const max = 10;
+    const items = [];
+    for(const m of allMovies){
+      const title = (m.title||'');
+      const subtitle = (m.subtitle||'');
+      if(title.toLowerCase().includes(q) || subtitle.toLowerCase().includes(q)){
+        items.push({id:m.id, title, subtitle});
+        if(items.length>=max) break;
+      }
+    }
+    if(!items.length){ hideSuggestions(); return; }
+    sugg.innerHTML = '';
+    for(const it of items){
+      const row = document.createElement('div');
+      row.className = 'sugg-item';
+      row.role = 'option';
+      row.innerHTML = `<span>${it.title}</span><small>${it.subtitle? it.subtitle.slice(0,36): ''}</small>`;
+      row.addEventListener('click', ()=>{
+        searchInput.value = it.title;
+        hideSuggestions();
+        doSearch();
+      });
+      sugg.appendChild(row);
+    }
+    sugg.classList.add('show');
+  }
+  function hideSuggestions(){ sugg.classList.remove('show'); }
+
+  const REVALIDATE_INTERVAL = 5 * 60 * 1000;
+
+  async function fetchMoviesFromServer() {
+    try {
+      const PROXY_BASE = "https://talhasproxy.talhascollection0.workers.dev";
+      const targetUrl = `${firebaseConfig.databaseURL.replace(/\/+$/, '')}/movies.json`;
+
+      let lastUpdated = await getMetaFromDB('movies_updatedAt');
+      const now = Date.now();
+
+      let ttl;
+      if (lastUpdated) {
+        const diffMin = (now - lastUpdated) / 60000;
+        if (diffMin < 10) ttl = 60;
+        else if (diffMin < 30) ttl = 300;
+        else if (diffMin < 120) ttl = 900;
+        else ttl = 1800;
+      } else ttl = 900;
+
+      const proxiedUrl = `${PROXY_BASE}?target=${encodeURIComponent(targetUrl)}&ttl=${ttl}`;
+      const resp = await fetch(proxiedUrl, { method: "GET", headers: { "Accept": "application/json" }, cache: "no-store" });
+      if (!resp.ok) {
+        console.warn("Movies fetch failed", resp.status);
+        return { status: 'error', statusCode: resp.status };
+      }
+
+      const json = await resp.json();
+      const arr = Object.entries(json||{}).map(([id,m])=> ({ id, ...m }));
+
+      // Merge local pinned flags so local pins don't get overwritten by server
+      try{
+        const local = await getMoviesFromDB();
+        const map = new Map(local.map(x=>[x.id, x]));
+        arr.forEach(a=>{
+          const l = map.get(a.id);
+          if(l && l.pinned) a.pinned = true;
+        });
+      }catch(e){ /* ignore */ }
+
+      sortWithPinned(arr);
+
+      allMovies = arr;
+      filtered = allMovies;
+      page = 1;
+      render();
+      setupInfiniteScroll();
+
+      // save to local DB in idle
+      if ('requestIdleCallback' in window) {
+        requestIdleCallback(() => saveMoviesToDB(allMovies).then(()=> saveMetaToDB('movies_updatedAt', now)), { timeout: 1000 });
+      } else {
+        setTimeout(() => saveMoviesToDB(allMovies).then(()=> saveMetaToDB('movies_updatedAt', now)), 0);
+      }
+
+      console.log(`✅ Movies fetched successfully (adaptive TTL=${ttl}s)`);
+      return { status: 'ok', ttl };
+    } catch(err) {
+      console.error("❌ Fetch error", err);
+      return { status: 'error', error: err };
+    }
+  }
+
+  let revalidateTimer = null;
+  async function revalidateNow(){
+    if(revalidateTimer) return;
+    revalidateTimer = true;
+    try{
+      await fetchMoviesFromServer();
+    } finally {
+      revalidateTimer = null;
+    }
+  }
+
+  let pollIntervalId = null;
+  function startBackgroundPolling(){
+    if(pollIntervalId) clearInterval(pollIntervalId);
+    pollIntervalId = setInterval(()=> {
+      if(document.hidden) return;
+      revalidateNow();
+    }, REVALIDATE_INTERVAL);
+  }
+
+  document.addEventListener('visibilitychange', ()=> { if(!document.hidden) revalidateNow(); });
+  window.addEventListener('focus', ()=> revalidateNow());
+
+  (async function init(){
+    try{
+      const localMovies = await getMoviesFromDB();
+      if(localMovies && localMovies.length){
+        allMovies = localMovies.slice().sort((a,b)=> (b.releasedAt||0)-(a.releasedAt||0));
+        // ensure pinned are first
+        sortWithPinned(allMovies);
+        filtered = allMovies; page = 1; render(); setupInfiniteScroll();
+      }
+    }catch(e){  }
+
+    revalidateNow();
+    startBackgroundPolling();
+  })();
+
+  const modal = document.getElementById('modal');
+  const mPoster = document.getElementById('m-poster');
+  const mTitle = document.getElementById('m-title');
+  const mDesc = document.getElementById('m-desc');
+  const mRating = document.getElementById('m-rating');
+  const mLinks = document.getElementById('m-links');
+  document.getElementById('close').addEventListener('click', ()=> modal.classList.remove('show'));
+  modal.addEventListener('click', (e)=>{ if(e.target===modal) modal.classList.remove('show'); });
+
+  function openModal(m){
+    mPoster.src = m.poster || '';
+    mTitle.textContent = m.title || 'Untitled';
+    mDesc.textContent = m.description || '';
+    mRating.textContent = m.rating || '—';
+
+    mLinks.innerHTML = '';
+    const links = Array.isArray(m.downloadLinks) ? m.downloadLinks : [];
+    if(!links.length){
+      const d = document.createElement('div');
+      d.style.color='#a7a4b4';
+      d.textContent = 'No download links available.';
+      mLinks.appendChild(d);
+    } else {
+      links.forEach((obj)=>{
+        if(!obj || !obj.url) return;
+        const a = document.createElement('a');
+        a.href = obj.url; a.target='_blank'; a.rel='noopener';
+        a.className = 'd-btn';
+        a.textContent = (obj.text || 'Download');
+        mLinks.appendChild(a);
+      });
+    }
+    modal.classList.add('show');
+  }
+
+  // Toggle pin locally + try to persist to server via proxy
+  async function togglePin(movie){
+    try{
+      movie.pinned = !movie.pinned;
+      // update in allMovies
+      const idx = allMovies.findIndex(x=> x.id === movie.id);
+      if(idx >= 0) allMovies[idx] = movie;
+      sortWithPinned(allMovies);
+      // update filtered (if search active keep same filter)
+      const q = searchInput.value.trim().toLowerCase();
+      if(q) filtered = allMovies.filter(m => ((m.title||'').toLowerCase().includes(q) || (m.subtitle||'').toLowerCase().includes(q)));
+      else filtered = allMovies;
+      page = 1;
+      render();
+
+      // save to local DB
+      await updateMovieInDB(movie);
+
+      // attempt to persist to remote Firebase via proxy (PATCH)
+      // Note: this depends on your proxy supporting PATCH to Firebase; might fail if not allowed.
+      const PROXY_BASE = "https://talhasproxy.talhascollection0.workers.dev";
+      const targetUrl = `${firebaseConfig.databaseURL.replace(/\/+$/, '')}/movies/${encodeURIComponent(movie.id)}.json`;
+      const proxiedUrl = `${PROXY_BASE}?target=${encodeURIComponent(targetUrl)}`;
+      try{
+        const resp = await fetch(proxiedUrl, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ pinned: !!movie.pinned })
+        });
+        if(!resp.ok) {
+          console.warn("Pin update to server failed:", resp.status);
+        } else {
+          console.log("Pin updated on server.");
+        }
+      }catch(e){
+        console.warn("Pin update to server error (proxy/write may be blocked):", e);
+      }
+    }catch(err){
+      console.error("togglePin error", err);
+    }
+  }
+
+  document.addEventListener('DOMContentLoaded', async ()=>{
+    try{
+      const cached = await getMoviesFromDB();
+      if(cached && cached.length){
+        allMovies = cached.slice().sort((a,b)=> (b.releasedAt||0)-(a.releasedAt||0));
+        sortWithPinned(allMovies);
+        filtered = allMovies; page = 1; render(); setupInfiniteScroll();
+      }
+    }catch(e){  }
+
+    revalidateNow();
+    setInterval(()=>{ if(!document.hidden) revalidateNow(); }, REVALIDATE_INTERVAL);
+    window.addEventListener('focus', ()=> revalidateNow());
+    document.addEventListener('visibilitychange', ()=>{
+      if(document.visibilityState === 'visible') revalidateNow();
+    });
+  });
+  </script>
+</body>
+</html>
