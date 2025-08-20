@@ -210,7 +210,11 @@ html,body{height:100%;margin:0;font-family:Poppins, system-ui, -apple-system, Se
     s.clear();
     movies.forEach(x=> s.put(x));
     m.put({key:'updatedAt', value: Date.now()});
-    return tx.complete;
+    return new Promise((res, rej) => {
+      tx.oncomplete = () => res(true);
+      tx.onerror = () => rej(tx.error);
+      tx.onabort = () => rej(tx.error || new Error("Transaction aborted"));
+    });
   }
   async function getMoviesFromDB(){
     const db = await openDB();
@@ -229,7 +233,11 @@ html,body{height:100%;margin:0;font-family:Poppins, system-ui, -apple-system, Se
     const tx = db.transaction('meta','readwrite');
     const s = tx.objectStore('meta');
     s.put({key, value});
-    return tx.complete;
+    return new Promise((res, rej) => {
+      tx.oncomplete = () => res(true);
+      tx.onerror = () => rej(tx.error);
+      tx.onabort = () => rej(tx.error || new Error("Transaction aborted"));
+    });
   }
 
   let allMovies = [];
