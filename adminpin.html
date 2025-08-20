@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Admin Eyes</title>
+<title>Talha's Collection</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -78,6 +78,12 @@ html,body{height:100%;margin:0;font-family:Poppins, system-ui, -apple-system, Se
 }
 .pin-btn svg{width:18px;height:18px;display:block;pointer-events:none;}
 .pin-btn[aria-pressed="true"]{background:linear-gradient(90deg,#ffd166,#ff8c42);border:none;}
+.pin-star{
+  position:absolute;top:10px;right:10px;z-index:22;width:34px;height:34px;border-radius:8px;display:grid;place-items:center;
+  background:linear-gradient(90deg, rgba(255,215,0,0.12), rgba(255,215,0,0.06));border:1px solid rgba(255,215,0,0.12);
+  pointer-events:none;
+}
+.pin-star svg{width:16px;height:16px;}
 @media (max-width:760px){.searchbar{padding:10px 12px}.searchbar-inner{flex-direction:row;gap:8px}.sugg{top: calc(100% + 6px);left:8px;right:8px;width:calc(100% - 16px)}.logo{font-size:20px;padding:8px}.section-title{padding:10px}.sheet{margin:12px}}
 @media (max-width:460px){.searchbar-inner{flex-direction:column-reverse;align-items:stretch}.searchbar input{border-radius:12px;padding:10px;font-size:15px}.btn{width:100%;padding:10px}.sugg{left:10px;right:10px;width:calc(100% - 20px)}.section-title{flex-direction:row;align-items:center;gap:8px}.grid{gap:12px}}
 @media (max-width:600px){.header{justify-content:center}.logo-link{text-align:center;display:inline-block}.searchbar{width:100%;margin-top:10px;justify-content:center;}}
@@ -147,456 +153,506 @@ html,body{height:100%;margin:0;font-family:Poppins, system-ui, -apple-system, Se
     import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
     import { getDatabase, ref, onValue } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
 
+    // === CONFIG / SETTINGS ===
+    // IMPORTANT: set this to true only when the current user has been verified as admin.
+    // For testing locally you can toggle it, but in production set via secure server-side check.
+    const isAdmin = true; // <-- change to true only for admin sessions
+
     const firebaseConfig = {
-    apiKey: "AIzaSyDpiN0OV1aD709Q987PymfOOp_lcW6Hid8",
-    authDomain: "my-book-project-c5a17.firebaseapp.com",
-    databaseURL: "https://my-book-project-c5a17-default-rtdb.asia-southeast1.firebasedatabase.app",
-    projectId: "my-book-project-c5a17",
-    storageBucket: "my-book-project-c5a17.appspot.com",
-    messagingSenderId: "422603504433",
-    appId: "1:422603504433:web:e6870a7d2c57c045eb0e10",
-    measurementId: "G-F763MR7FR9"
-  };
-
-  const grid = document.getElementById('grid');
-  const sentinel = document.getElementById('sentinel');
-  const searchInput = document.getElementById('search');
-  const searchBtn = document.getElementById('searchBtn');
-  const sugg = document.getElementById('sugg');
-
-  const makeSkeletons = (n=12)=>{
-    grid.innerHTML = '';
-    for(let i=0;i<n;i++) grid.appendChild(Object.assign(document.createElement('div'),{className:'skeleton'}));
-  };
-  makeSkeletons();
-
-  const daysAgo = ts => {
-    if(!ts) return '';
-    const diff = Math.max(0, Date.now() - ts);
-    const d = Math.floor(diff / (1000*60*60*24));
-    if(d===0) return 'Today';
-    if(d===1) return '1 day ago';
-    return `${d} days ago`;
-  };
-  const clamp = (n,min,max)=> Math.min(max, Math.max(min, n));
-
-  function debounce(fn, delay=120){
-    let t; return (...a)=>{ clearTimeout(t); t=setTimeout(()=>fn(...a), delay); };
-  }
-  function throttle(fn, wait=200){
-    let last=0, timer; return (...a)=>{
-      const now=Date.now();
-      const remaining = wait - (now - last);
-      if(remaining<=0){ last=now; fn(...a); }
-      else if(!timer){ timer=setTimeout(()=>{ last=Date.now(); timer=null; fn(...a); }, remaining); }
+      apiKey: "AIzaSyDpiN0OV1aD709Q987PymfOOp_lcW6Hid8",
+      authDomain: "my-book-project-c5a17.firebaseapp.com",
+      databaseURL: "https://my-book-project-c5a17-default-rtdb.asia-southeast1.firebasedatabase.app",
+      projectId: "my-book-project-c5a17",
+      storageBucket: "my-book-project-c5a17.appspot.com",
+      messagingSenderId: "422603504433",
+      appId: "1:422603504433:web:e6870a7d2c57c045eb0e10",
+      measurementId: "G-F763MR7FR9"
     };
-  }
 
-  function openDB(){
-    return new Promise((resolve, reject)=>{
-      const req = indexedDB.open('movieCacheDB', 2);
-      req.onerror = ()=> reject(req.error);
-      req.onsuccess = ()=> resolve(req.result);
-      req.onupgradeneeded = ()=>{
-        const db = req.result;
-        if(!db.objectStoreNames.contains('movies')){
-          db.createObjectStore('movies', { keyPath: 'id' });
-        }
-        if(!db.objectStoreNames.contains('meta')){
-          db.createObjectStore('meta', { keyPath: 'key' });
-        }
-      };
-    });
-  }
-  async function saveMoviesToDB(movies){
-    const db = await openDB();
-    const tx = db.transaction(['movies','meta'],'readwrite');
-    const s = tx.objectStore('movies');
-    s.clear();
-    movies.forEach(x=> s.put(x));
-    const m = tx.objectStore('meta');
-    m.put({key:'updatedAt', value: Date.now()});
-    return tx.complete;
-  }
-  async function updateMovieInDB(movie){
-    const db = await openDB();
-    const tx = db.transaction(['movies','meta'],'readwrite');
-    const s = tx.objectStore('movies');
-    s.put(movie);
-    // update meta timestamp
-    const m = tx.objectStore('meta');
-    m.put({key:'updatedAt', value: Date.now()});
-    return tx.complete;
-  }
-  async function getMoviesFromDB(){
-    const db = await openDB();
-    const tx = db.transaction('movies','readonly');
-    const s = tx.objectStore('movies');
-    return new Promise(res=>{ const r = s.getAll(); r.onsuccess=()=>res(r.result||[]); });
-  }
-  async function getMetaFromDB(key){
-    const db = await openDB();
-    const tx = db.transaction('meta','readonly');
-    const s = tx.objectStore('meta');
-    return new Promise(res=>{ const r = s.get(key); r.onsuccess=()=>res(r.result? r.result.value : null); });
-  }
-  async function saveMetaToDB(key, value){
-    const db = await openDB();
-    const tx = db.transaction('meta','readwrite');
-    const s = tx.objectStore('meta');
-    s.put({key, value});
-    return tx.complete;
-  }
+    // === DOM REFS ===
+    const grid = document.getElementById('grid');
+    const sentinel = document.getElementById('sentinel');
+    const searchInput = document.getElementById('search');
+    const searchBtn = document.getElementById('searchBtn');
+    const sugg = document.getElementById('sugg');
 
-  let allMovies = [];
-  let filtered = [];
-  let pageSize = 10;
-  let page = 1;
-  let observer;
-  let imgObserver;
+    // skeletons while loading
+    const makeSkeletons = (n=12)=>{
+      grid.innerHTML = '';
+      for(let i=0;i<n;i++) grid.appendChild(Object.assign(document.createElement('div'),{className:'skeleton'}));
+    };
+    makeSkeletons();
 
-  const setupImgObserver = ()=>{
-    imgObserver && imgObserver.disconnect();
-    imgObserver = new IntersectionObserver((entries)=>{
-      entries.forEach(entry=>{
-        if(entry.isIntersecting){
-          const img = entry.target;
-          const src = img.getAttribute('data-src');
-          if(src){
-            const load = ()=>{ img.src = src; img.removeAttribute('data-src'); };
-            if('requestIdleCallback' in window){ requestIdleCallback(load, {timeout: 500}); }
-            else setTimeout(load, 0);
+    // helpers
+    const daysAgo = ts => {
+      if(!ts) return '';
+      const diff = Math.max(0, Date.now() - ts);
+      const d = Math.floor(diff / (1000*60*60*24));
+      if(d===0) return 'Today';
+      if(d===1) return '1 day ago';
+      return `${d} days ago`;
+    };
+    const clamp = (n,min,max)=> Math.min(max, Math.max(min, n));
+    function debounce(fn, delay=120){ let t; return (...a)=>{ clearTimeout(t); t=setTimeout(()=>fn(...a), delay); }; }
+    function throttle(fn, wait=200){ let last=0, timer; return (...a)=>{ const now=Date.now(); const remaining = wait - (now - last); if(remaining<=0){ last=now; fn(...a); } else if(!timer){ timer=setTimeout(()=>{ last=Date.now(); timer=null; fn(...a); }, remaining); } }; }
+
+    // IndexedDB helpers (movieCacheDB)
+    function openDB(){
+      return new Promise((resolve, reject)=>{
+        const req = indexedDB.open('movieCacheDB', 2);
+        req.onerror = ()=> reject(req.error);
+        req.onsuccess = ()=> resolve(req.result);
+        req.onupgradeneeded = ()=>{
+          const db = req.result;
+          if(!db.objectStoreNames.contains('movies')){
+            db.createObjectStore('movies', { keyPath: 'id' });
           }
-          imgObserver.unobserve(img);
-        }
-      });
-    },{rootMargin:'200px 0px'});
-  };
-
-  function sortWithPinned(arr){
-    // pinned first, then by releasedAt desc
-    arr.sort((a,b)=>{
-      if(a.pinned && !b.pinned) return -1;
-      if(!a.pinned && b.pinned) return 1;
-      return (b.releasedAt||0) - (a.releasedAt||0);
-    });
-  }
-
-  const render = debounce(()=>{
-    grid.innerHTML = '';
-    const total = filtered.length;
-    const upto = clamp(page*pageSize, 0, total);
-    if(!total){
-      const empty = document.createElement('p');
-      empty.style.color='#a7a4b4';
-      empty.style.gridColumn='1 / -1';
-      empty.textContent = 'No movies found.';
-      grid.appendChild(empty);
-      return;
-    }
-    const frag = document.createDocumentFragment();
-    for(let i=0;i<upto;i++){
-      const m = filtered[i];
-      const card = document.createElement('article');
-      card.className = 'card';
-      const img = document.createElement('img');
-      img.alt = m.title || 'Poster';
-      img.loading = 'lazy';
-      img.className = 'thumb';
-      img.setAttribute('data-src', m.poster || '');
-      img.src = 'data:image/gif;base64,R0lGODlhAQABAAAAACw=';
-      const grad = document.createElement('div'); grad.className = 'grad';
-      if((m.tags && Array.isArray(m.tags) && m.tags.includes('TRENDING')) || m.trending){
-        const ribbon = document.createElement('div'); ribbon.className='ribbon'; ribbon.textContent='TRENDING'; card.appendChild(ribbon);
-      }
-      const badge = document.createElement('div'); badge.className='badge'; badge.textContent = (m.quality || 'HD').toUpperCase();
-      const age = document.createElement('div'); age.className='age'; age.textContent = daysAgo(m.releasedAt) || (m.releasedAtText || '');
-      const meta = document.createElement('div'); meta.className='meta';
-      const t = document.createElement('p'); t.className='title'; t.textContent = m.title || 'Untitled';
-      const st = document.createElement('p'); st.className='subtitle'; st.textContent = m.subtitle || (m.description? String(m.description).slice(0,80): '') || '';
-      meta.appendChild(t); meta.appendChild(st);
-
-      // pin button
-      const pin = document.createElement('button');
-      pin.className = 'pin-btn';
-      pin.type = 'button';
-      pin.title = m.pinned ? 'Unpin' : 'Pin';
-      pin.setAttribute('aria-pressed', !!m.pinned);
-      pin.innerHTML = m.pinned ? `<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 2l3 7h6l-5 4 2 7-6-4-6 4 2-7-5-4h6l3-7z" fill="#fff"/></svg>` :
-                                 `<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 2l3 7h6l-5 4 2 7-6-4-6 4 2-7-5-4h6l3-7z" stroke="#ddd" stroke-width="1.2" fill="none"/></svg>`;
-      // clicking pin should not open modal
-      pin.addEventListener('click', (ev)=>{
-        ev.stopPropagation();
-        togglePin(m);
-      });
-
-      card.appendChild(img); card.appendChild(grad); card.appendChild(age); card.appendChild(badge); card.appendChild(meta);
-      card.appendChild(pin);
-      card.addEventListener('click',()=>openModal(m));
-      frag.appendChild(card);
-    }
-    grid.appendChild(frag);
-    setupImgObserver();
-    grid.querySelectorAll('img[data-src]').forEach(img=> imgObserver.observe(img));
-  }, 120);
-
-  const setupInfiniteScroll = ()=>{
-    observer && observer.disconnect();
-    observer = new IntersectionObserver((entries)=>{
-      entries.forEach(entry=>{
-        if(entry.isIntersecting){
-          const totalPages = Math.ceil(filtered.length / pageSize);
-          if(page < totalPages){
-            page += 1;
-            render();
+          if(!db.objectStoreNames.contains('meta')){
+            db.createObjectStore('meta', { keyPath: 'key' });
           }
+        };
+      });
+    }
+    async function saveMoviesToDB(movies){
+      const db = await openDB();
+      const tx = db.transaction(['movies','meta'],'readwrite');
+      const s = tx.objectStore('movies');
+      s.clear();
+      movies.forEach(x=> s.put(x));
+      const m = tx.objectStore('meta');
+      m.put({key:'updatedAt', value: Date.now()});
+      return tx.complete;
+    }
+    async function updateMovieInDB(movie){
+      const db = await openDB();
+      const tx = db.transaction(['movies','meta'],'readwrite');
+      const s = tx.objectStore('movies');
+      s.put(movie);
+      const m = tx.objectStore('meta');
+      m.put({key:'updatedAt', value: Date.now()});
+      return tx.complete;
+    }
+    async function getMoviesFromDB(){
+      const db = await openDB();
+      const tx = db.transaction('movies','readonly');
+      const s = tx.objectStore('movies');
+      return new Promise(res=>{ const r = s.getAll(); r.onsuccess=()=>res(r.result||[]); });
+    }
+    async function getMetaFromDB(key){
+      const db = await openDB();
+      const tx = db.transaction('meta','readonly');
+      const s = tx.objectStore('meta');
+      return new Promise(res=>{ const r = s.get(key); r.onsuccess=()=>res(r.result? r.result.value : null); });
+    }
+    async function saveMetaToDB(key, value){
+      const db = await openDB();
+      const tx = db.transaction('meta','readwrite');
+      const s = tx.objectStore('meta');
+      s.put({key, value});
+      return tx.complete;
+    }
+
+    // app state
+    let allMovies = [];
+    let filtered = [];
+    let pageSize = 10;
+    let page = 1;
+    let observer;
+    let imgObserver;
+
+    const setupImgObserver = ()=>{
+      imgObserver && imgObserver.disconnect();
+      imgObserver = new IntersectionObserver((entries)=>{
+        entries.forEach(entry=>{
+          if(entry.isIntersecting){
+            const img = entry.target;
+            const src = img.getAttribute('data-src');
+            if(src){
+              const load = ()=>{ img.src = src; img.removeAttribute('data-src'); };
+              if('requestIdleCallback' in window){ requestIdleCallback(load, {timeout: 500}); }
+              else setTimeout(load, 0);
+            }
+            imgObserver.unobserve(img);
+          }
+        });
+      },{rootMargin:'200px 0px'});
+    };
+
+    function sortWithPinned(arr){
+      // pinned:true go on top — pinned only respected if present in data (admin-controlled)
+      arr.sort((a,b)=>{
+        if(a.pinned && !b.pinned) return -1;
+        if(!a.pinned && b.pinned) return 1;
+        return (b.releasedAt||0) - (a.releasedAt||0);
+      });
+    }
+
+    const render = debounce(()=>{
+      grid.innerHTML = '';
+      const total = filtered.length;
+      const upto = clamp(page*pageSize, 0, total);
+      if(!total){
+        const empty = document.createElement('p');
+        empty.style.color='#a7a4b4';
+        empty.style.gridColumn='1 / -1';
+        empty.textContent = 'No movies found.';
+        grid.appendChild(empty);
+        return;
+      }
+      const frag = document.createDocumentFragment();
+      for(let i=0;i<upto;i++){
+        const m = filtered[i];
+        const card = document.createElement('article');
+        card.className = 'card';
+        const img = document.createElement('img');
+        img.alt = m.title || 'Poster';
+        img.loading = 'lazy';
+        img.className = 'thumb';
+        img.setAttribute('data-src', m.poster || '');
+        img.src = 'data:image/gif;base64,R0lGODlhAQABAAAAACw=';
+        const grad = document.createElement('div'); grad.className = 'grad';
+        if((m.tags && Array.isArray(m.tags) && m.tags.includes('TRENDING')) || m.trending){
+          const ribbon = document.createElement('div'); ribbon.className='ribbon'; ribbon.textContent='TRENDING'; card.appendChild(ribbon);
         }
-      });
-    }, { rootMargin: '400px 0px' });
-    observer.observe(sentinel);
-  };
+        const badge = document.createElement('div'); badge.className='badge'; badge.textContent = (m.quality || 'HD').toUpperCase();
+        const age = document.createElement('div'); age.className='age'; age.textContent = daysAgo(m.releasedAt) || (m.releasedAtText || '');
+        const meta = document.createElement('div'); meta.className='meta';
+        const t = document.createElement('p'); t.className='title'; t.textContent = m.title || 'Untitled';
+        const st = document.createElement('p'); st.className='subtitle'; st.textContent = m.subtitle || (m.description? String(m.description).slice(0,80): '') || '';
+        meta.appendChild(t); meta.appendChild(st);
 
-  const doSearch = ()=>{
-    const q = searchInput.value.trim().toLowerCase();
-    if(!q){ filtered = allMovies; page = 1; hideSuggestions(); render(); return; }
-    filtered = allMovies.filter(m => (
-      (m.title||'').toLowerCase().includes(q) || (m.subtitle||'').toLowerCase().includes(q)
-    ));
-    page = 1;
-    render();
-    showSuggestions(q);
-  };
-  const throttledSearch = throttle(doSearch, 220);
-  const debouncedInput = debounce(()=> showSuggestions(searchInput.value.trim().toLowerCase()), 160);
-  searchBtn.addEventListener('click', doSearch);
-  searchInput.addEventListener('input', (e)=>{ throttledSearch(); debouncedInput(); });
-  searchInput.addEventListener('keydown', (e)=>{ if(e.key==='Enter'){ doSearch(); hideSuggestions(); } });
-  document.addEventListener('click', (e)=>{ if(!sugg.contains(e.target) && e.target!==searchInput) hideSuggestions(); });
-
-  function showSuggestions(q){
-    if(!q){ hideSuggestions(); return; }
-    const max = 10;
-    const items = [];
-    for(const m of allMovies){
-      const title = (m.title||'');
-      const subtitle = (m.subtitle||'');
-      if(title.toLowerCase().includes(q) || subtitle.toLowerCase().includes(q)){
-        items.push({id:m.id, title, subtitle});
-        if(items.length>=max) break;
-      }
-    }
-    if(!items.length){ hideSuggestions(); return; }
-    sugg.innerHTML = '';
-    for(const it of items){
-      const row = document.createElement('div');
-      row.className = 'sugg-item';
-      row.role = 'option';
-      row.innerHTML = `<span>${it.title}</span><small>${it.subtitle? it.subtitle.slice(0,36): ''}</small>`;
-      row.addEventListener('click', ()=>{
-        searchInput.value = it.title;
-        hideSuggestions();
-        doSearch();
-      });
-      sugg.appendChild(row);
-    }
-    sugg.classList.add('show');
-  }
-  function hideSuggestions(){ sugg.classList.remove('show'); }
-
-  const REVALIDATE_INTERVAL = 5 * 60 * 1000;
-
-  async function fetchMoviesFromServer() {
-    try {
-      const PROXY_BASE = "https://talhasproxy.talhascollection0.workers.dev";
-      const targetUrl = `${firebaseConfig.databaseURL.replace(/\/+$/, '')}/movies.json`;
-
-      let lastUpdated = await getMetaFromDB('movies_updatedAt');
-      const now = Date.now();
-
-      let ttl;
-      if (lastUpdated) {
-        const diffMin = (now - lastUpdated) / 60000;
-        if (diffMin < 10) ttl = 60;
-        else if (diffMin < 30) ttl = 300;
-        else if (diffMin < 120) ttl = 900;
-        else ttl = 1800;
-      } else ttl = 900;
-
-      const proxiedUrl = `${PROXY_BASE}?target=${encodeURIComponent(targetUrl)}&ttl=${ttl}`;
-      const resp = await fetch(proxiedUrl, { method: "GET", headers: { "Accept": "application/json" }, cache: "no-store" });
-      if (!resp.ok) {
-        console.warn("Movies fetch failed", resp.status);
-        return { status: 'error', statusCode: resp.status };
-      }
-
-      const json = await resp.json();
-      const arr = Object.entries(json||{}).map(([id,m])=> ({ id, ...m }));
-
-      // Merge local pinned flags so local pins don't get overwritten by server
-      try{
-        const local = await getMoviesFromDB();
-        const map = new Map(local.map(x=>[x.id, x]));
-        arr.forEach(a=>{
-          const l = map.get(a.id);
-          if(l && l.pinned) a.pinned = true;
-        });
-      }catch(e){ /* ignore */ }
-
-      sortWithPinned(arr);
-
-      allMovies = arr;
-      filtered = allMovies;
-      page = 1;
-      render();
-      setupInfiniteScroll();
-
-      // save to local DB in idle
-      if ('requestIdleCallback' in window) {
-        requestIdleCallback(() => saveMoviesToDB(allMovies).then(()=> saveMetaToDB('movies_updatedAt', now)), { timeout: 1000 });
-      } else {
-        setTimeout(() => saveMoviesToDB(allMovies).then(()=> saveMetaToDB('movies_updatedAt', now)), 0);
-      }
-
-      console.log(`✅ Movies fetched successfully (adaptive TTL=${ttl}s)`);
-      return { status: 'ok', ttl };
-    } catch(err) {
-      console.error("❌ Fetch error", err);
-      return { status: 'error', error: err };
-    }
-  }
-
-  let revalidateTimer = null;
-  async function revalidateNow(){
-    if(revalidateTimer) return;
-    revalidateTimer = true;
-    try{
-      await fetchMoviesFromServer();
-    } finally {
-      revalidateTimer = null;
-    }
-  }
-
-  let pollIntervalId = null;
-  function startBackgroundPolling(){
-    if(pollIntervalId) clearInterval(pollIntervalId);
-    pollIntervalId = setInterval(()=> {
-      if(document.hidden) return;
-      revalidateNow();
-    }, REVALIDATE_INTERVAL);
-  }
-
-  document.addEventListener('visibilitychange', ()=> { if(!document.hidden) revalidateNow(); });
-  window.addEventListener('focus', ()=> revalidateNow());
-
-  (async function init(){
-    try{
-      const localMovies = await getMoviesFromDB();
-      if(localMovies && localMovies.length){
-        allMovies = localMovies.slice().sort((a,b)=> (b.releasedAt||0)-(a.releasedAt||0));
-        // ensure pinned are first
-        sortWithPinned(allMovies);
-        filtered = allMovies; page = 1; render(); setupInfiniteScroll();
-      }
-    }catch(e){  }
-
-    revalidateNow();
-    startBackgroundPolling();
-  })();
-
-  const modal = document.getElementById('modal');
-  const mPoster = document.getElementById('m-poster');
-  const mTitle = document.getElementById('m-title');
-  const mDesc = document.getElementById('m-desc');
-  const mRating = document.getElementById('m-rating');
-  const mLinks = document.getElementById('m-links');
-  document.getElementById('close').addEventListener('click', ()=> modal.classList.remove('show'));
-  modal.addEventListener('click', (e)=>{ if(e.target===modal) modal.classList.remove('show'); });
-
-  function openModal(m){
-    mPoster.src = m.poster || '';
-    mTitle.textContent = m.title || 'Untitled';
-    mDesc.textContent = m.description || '';
-    mRating.textContent = m.rating || '—';
-
-    mLinks.innerHTML = '';
-    const links = Array.isArray(m.downloadLinks) ? m.downloadLinks : [];
-    if(!links.length){
-      const d = document.createElement('div');
-      d.style.color='#a7a4b4';
-      d.textContent = 'No download links available.';
-      mLinks.appendChild(d);
-    } else {
-      links.forEach((obj)=>{
-        if(!obj || !obj.url) return;
-        const a = document.createElement('a');
-        a.href = obj.url; a.target='_blank'; a.rel='noopener';
-        a.className = 'd-btn';
-        a.textContent = (obj.text || 'Download');
-        mLinks.appendChild(a);
-      });
-    }
-    modal.classList.add('show');
-  }
-
-  // Toggle pin locally + try to persist to server via proxy
-  async function togglePin(movie){
-    try{
-      movie.pinned = !movie.pinned;
-      // update in allMovies
-      const idx = allMovies.findIndex(x=> x.id === movie.id);
-      if(idx >= 0) allMovies[idx] = movie;
-      sortWithPinned(allMovies);
-      // update filtered (if search active keep same filter)
-      const q = searchInput.value.trim().toLowerCase();
-      if(q) filtered = allMovies.filter(m => ((m.title||'').toLowerCase().includes(q) || (m.subtitle||'').toLowerCase().includes(q)));
-      else filtered = allMovies;
-      page = 1;
-      render();
-
-      // save to local DB
-      await updateMovieInDB(movie);
-
-      // attempt to persist to remote Firebase via proxy (PATCH)
-      // Note: this depends on your proxy supporting PATCH to Firebase; might fail if not allowed.
-      const PROXY_BASE = "https://talhasproxy.talhascollection0.workers.dev";
-      const targetUrl = `${firebaseConfig.databaseURL.replace(/\/+$/, '')}/movies/${encodeURIComponent(movie.id)}.json`;
-      const proxiedUrl = `${PROXY_BASE}?target=${encodeURIComponent(targetUrl)}`;
-      try{
-        const resp = await fetch(proxiedUrl, {
-          method: "PATCH",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ pinned: !!movie.pinned })
-        });
-        if(!resp.ok) {
-          console.warn("Pin update to server failed:", resp.status);
+        // Pin display:
+        // - If admin (isAdmin=true): show clickable pin button to toggle pinned state
+        // - If not admin and item.pinned === true: show static star indicator (non-clickable)
+        if(isAdmin){
+          const pin = document.createElement('button');
+          pin.className = 'pin-btn';
+          pin.type = 'button';
+          pin.title = m.pinned ? 'Unpin (admin)' : 'Pin (admin)';
+          pin.setAttribute('aria-pressed', !!m.pinned);
+          pin.innerHTML = m.pinned ? `<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 2l3 7h6l-5 4 2 7-6-4-6 4 2-7-5-4h6l3-7z" fill="#fff"/></svg>` :
+                                     `<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 2l3 7h6l-5 4 2 7-6-4-6 4 2-7-5-4h6l3-7z" stroke="#ddd" stroke-width="1.2" fill="none"/></svg>`;
+          pin.addEventListener('click', (ev)=>{
+            ev.stopPropagation();
+            // protect: only proceed if isAdmin still true
+            if(!isAdmin) return;
+            togglePin(m);
+          });
+          card.appendChild(pin);
         } else {
-          console.log("Pin updated on server.");
+          if(m.pinned){
+            const star = document.createElement('div');
+            star.className = 'pin-star';
+            star.title = 'Pinned by admin';
+            star.innerHTML = `<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 2l3 7h6l-5 4 2 7-6-4-6 4 2-7-5-4h6l3-7z" fill="#ffd166"/></svg>`;
+            card.appendChild(star);
+          }
         }
-      }catch(e){
-        console.warn("Pin update to server error (proxy/write may be blocked):", e);
+
+        card.appendChild(img); card.appendChild(grad); card.appendChild(age); card.appendChild(badge); card.appendChild(meta);
+
+        card.addEventListener('click',()=>openModal(m));
+        frag.appendChild(card);
       }
-    }catch(err){
-      console.error("togglePin error", err);
+      grid.appendChild(frag);
+      setupImgObserver();
+      grid.querySelectorAll('img[data-src]').forEach(img=> imgObserver.observe(img));
+    }, 120);
+
+    const setupInfiniteScroll = ()=>{
+      observer && observer.disconnect();
+      observer = new IntersectionObserver((entries)=>{
+        entries.forEach(entry=>{
+          if(entry.isIntersecting){
+            const totalPages = Math.ceil(filtered.length / pageSize);
+            if(page < totalPages){
+              page += 1;
+              render();
+            }
+          }
+        });
+      }, { rootMargin: '400px 0px' });
+      observer.observe(sentinel);
+    };
+
+    const doSearch = ()=>{
+      const q = searchInput.value.trim().toLowerCase();
+      if(!q){ filtered = allMovies; page = 1; hideSuggestions(); render(); return; }
+      filtered = allMovies.filter(m => (
+        (m.title||'').toLowerCase().includes(q) || (m.subtitle||'').toLowerCase().includes(q)
+      ));
+      page = 1;
+      render();
+      showSuggestions(q);
+    };
+    const throttledSearch = throttle(doSearch, 220);
+    const debouncedInput = debounce(()=> showSuggestions(searchInput.value.trim().toLowerCase()), 160);
+    searchBtn.addEventListener('click', doSearch);
+    searchInput.addEventListener('input', (e)=>{ throttledSearch(); debouncedInput(); });
+    searchInput.addEventListener('keydown', (e)=>{ if(e.key==='Enter'){ doSearch(); hideSuggestions(); } });
+    document.addEventListener('click', (e)=>{ if(!sugg.contains(e.target) && e.target!==searchInput) hideSuggestions(); });
+
+    function showSuggestions(q){
+      if(!q){ hideSuggestions(); return; }
+      const max = 10;
+      const items = [];
+      for(const m of allMovies){
+        const title = (m.title||'');
+        const subtitle = (m.subtitle||'');
+        if(title.toLowerCase().includes(q) || subtitle.toLowerCase().includes(q)){
+          items.push({id:m.id, title, subtitle});
+          if(items.length>=max) break;
+        }
+      }
+      if(!items.length){ hideSuggestions(); return; }
+      sugg.innerHTML = '';
+      for(const it of items){
+        const row = document.createElement('div');
+        row.className = 'sugg-item';
+        row.role = 'option';
+        row.innerHTML = `<span>${it.title}</span><small>${it.subtitle? it.subtitle.slice(0,36): ''}</small>`;
+        row.addEventListener('click', ()=>{
+          searchInput.value = it.title;
+          hideSuggestions();
+          doSearch();
+        });
+        sugg.appendChild(row);
+      }
+      sugg.classList.add('show');
     }
-  }
+    function hideSuggestions(){ sugg.classList.remove('show'); }
 
-  document.addEventListener('DOMContentLoaded', async ()=>{
-    try{
-      const cached = await getMoviesFromDB();
-      if(cached && cached.length){
-        allMovies = cached.slice().sort((a,b)=> (b.releasedAt||0)-(a.releasedAt||0));
-        sortWithPinned(allMovies);
-        filtered = allMovies; page = 1; render(); setupInfiniteScroll();
+    const REVALIDATE_INTERVAL = 5 * 60 * 1000;
+
+    // Initialize Firebase app + Realtime DB listener
+    initializeApp(firebaseConfig);
+    const db = getDatabase();
+    const moviesRef = ref(db, 'movies');
+
+    let realtimeEnabled = false;
+    function setupRealtimeListener(){
+      try{
+        realtimeEnabled = true;
+        onValue(moviesRef, async (snapshot) => {
+          try {
+            const json = snapshot.val() || {};
+            const arr = Object.entries(json).map(([id, m]) => ({ id, ...m }));
+
+            // NOTE: removed local "preserve pinned" logic so UI always follows Firebase data
+
+            sortWithPinned(arr);
+            allMovies = arr;
+            filtered = allMovies;
+            page = 1;
+            render();
+            setupInfiniteScroll();
+
+            // persist locally
+            try{ await saveMoviesToDB(allMovies); await saveMetaToDB('movies_updatedAt', Date.now()); }catch(e){ }
+
+            console.log('🔁 Realtime: movies updated from Firebase.');
+          } catch (err) {
+            console.error('Realtime listener error', err);
+          }
+        });
+      }catch(err){
+        realtimeEnabled = false;
+        console.warn('Realtime setup failed:', err);
       }
-    }catch(e){  }
+    }
 
-    revalidateNow();
-    setInterval(()=>{ if(!document.hidden) revalidateNow(); }, REVALIDATE_INTERVAL);
+    async function fetchMoviesFromServer() {
+      try {
+        const PROXY_BASE = "https://talhasproxy.talhascollection0.workers.dev";
+        const targetUrl = `${firebaseConfig.databaseURL.replace(/\/+$/, '')}/movies.json`;
+
+        let lastUpdated = await getMetaFromDB('movies_updatedAt');
+        const now = Date.now();
+
+        let ttl;
+        if (lastUpdated) {
+          const diffMin = (now - lastUpdated) / 60000;
+          if (diffMin < 10) ttl = 60;
+          else if (diffMin < 30) ttl = 300;
+          else if (diffMin < 120) ttl = 900;
+          else ttl = 1800;
+        } else ttl = 900;
+
+        const proxiedUrl = `${PROXY_BASE}?target=${encodeURIComponent(targetUrl)}&ttl=${ttl}`;
+        const resp = await fetch(proxiedUrl, { method: "GET", headers: { "Accept": "application/json" }, cache: "no-store" });
+        if (!resp.ok) {
+          console.warn("Movies fetch failed", resp.status);
+          return { status: 'error', statusCode: resp.status };
+        }
+
+        const json = await resp.json();
+        const arr = Object.entries(json||{}).map(([id,m])=> ({ id, ...m }));
+
+        // NOTE: removed local pinned-preserve logic so UI always reflects Firebase JSON
+
+        sortWithPinned(arr);
+
+        allMovies = arr;
+        filtered = allMovies;
+        page = 1;
+        render();
+        setupInfiniteScroll();
+
+        if ('requestIdleCallback' in window) {
+          requestIdleCallback(() => saveMoviesToDB(allMovies).then(()=> saveMetaToDB('movies_updatedAt', now)), { timeout: 1000 });
+        } else {
+          setTimeout(() => saveMoviesToDB(allMovies).then(()=> saveMetaToDB('movies_updatedAt', now)), 0);
+        }
+
+        console.log(`✅ Movies fetched successfully (adaptive TTL=${ttl}s)`);
+        return { status: 'ok', ttl };
+      } catch(err) {
+        console.error("❌ Fetch error", err);
+        return { status: 'error', error: err };
+      }
+    }
+
+    let revalidateTimer = null;
+    async function revalidateNow(){
+      if(revalidateTimer) return;
+      revalidateTimer = true;
+      try{
+        // If realtime is enabled, prefer realtime — but still fetch as fallback
+        if(!realtimeEnabled) await fetchMoviesFromServer();
+        else { /* realtime active, we still may fetch fallback for initial load */ }
+      } finally {
+        revalidateTimer = null;
+      }
+    }
+
+    let pollIntervalId = null;
+    function startBackgroundPolling(){
+      if(pollIntervalId) clearInterval(pollIntervalId);
+      pollIntervalId = setInterval(()=> {
+        if(document.hidden) return;
+        revalidateNow();
+      }, REVALIDATE_INTERVAL);
+    }
+
+    document.addEventListener('visibilitychange', ()=> { if(!document.hidden) revalidateNow(); });
     window.addEventListener('focus', ()=> revalidateNow());
-    document.addEventListener('visibilitychange', ()=>{
-      if(document.visibilityState === 'visible') revalidateNow();
+
+    (async function init(){
+      try{
+        const localMovies = await getMoviesFromDB();
+        if(localMovies && localMovies.length){
+          allMovies = localMovies.slice().sort((a,b)=> (b.releasedAt||0)-(a.releasedAt||0));
+          sortWithPinned(allMovies);
+          filtered = allMovies; page = 1; render(); setupInfiniteScroll();
+        }
+      }catch(e){  }
+
+      // setup realtime first (preferred)
+      setupRealtimeListener();
+
+      // fetch once as fallback / initial load if realtime failed or proxy needed
+      revalidateNow();
+
+      // start background polling (optional). If you use realtime, you can comment this out to save requests.
+      // startBackgroundPolling(); // <-- comment/uncomment based on preference
+    })();
+
+    const modal = document.getElementById('modal');
+    const mPoster = document.getElementById('m-poster');
+    const mTitle = document.getElementById('m-title');
+    const mDesc = document.getElementById('m-desc');
+    const mRating = document.getElementById('m-rating');
+    const mLinks = document.getElementById('m-links');
+    document.getElementById('close').addEventListener('click', ()=> modal.classList.remove('show'));
+    modal.addEventListener('click', (e)=>{ if(e.target===modal) modal.classList.remove('show'); });
+
+    function openModal(m){
+      mPoster.src = m.poster || '';
+      mTitle.textContent = m.title || 'Untitled';
+      mDesc.textContent = m.description || '';
+      mRating.textContent = m.rating || '—';
+
+      mLinks.innerHTML = '';
+      const links = Array.isArray(m.downloadLinks) ? m.downloadLinks : [];
+      if(!links.length){
+        const d = document.createElement('div');
+        d.style.color='#a7a4b4';
+        d.textContent = 'No download links available.';
+        mLinks.appendChild(d);
+      } else {
+        links.forEach((obj)=>{
+          if(!obj || !obj.url) return;
+          const a = document.createElement('a');
+          a.href = obj.url; a.target='_blank'; a.rel='noopener';
+          a.className = 'd-btn';
+          a.textContent = (obj.text || 'Download');
+          mLinks.appendChild(a);
+        });
+      }
+      modal.classList.add('show');
+    }
+
+    // togglePin only allowed for admin sessions (isAdmin === true)
+    async function togglePin(movie){
+      if(!isAdmin){
+        console.warn('togglePin blocked: not admin');
+        return;
+      }
+      try{
+        movie.pinned = !movie.pinned;
+        // update in allMovies
+        const idx = allMovies.findIndex(x=> x.id === movie.id);
+        if(idx >= 0) allMovies[idx] = movie;
+        sortWithPinned(allMovies);
+        const q = searchInput.value.trim().toLowerCase();
+        if(q) filtered = allMovies.filter(m => ((m.title||'').toLowerCase().includes(q) || (m.subtitle||'').toLowerCase().includes(q)));
+        else filtered = allMovies;
+        page = 1;
+        render();
+
+        // save locally
+        await updateMovieInDB(movie);
+
+        // attempt to persist to remote Firebase via proxy (PATCH)
+        const PROXY_BASE = "https://talhasproxy.talhascollection0.workers.dev";
+        const targetUrl = `${firebaseConfig.databaseURL.replace(/\/+$/, '')}/movies/${encodeURIComponent(movie.id)}.json`;
+        const proxiedUrl = `${PROXY_BASE}?target=${encodeURIComponent(targetUrl)}`;
+        try{
+          const resp = await fetch(proxiedUrl, {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ pinned: !!movie.pinned })
+          });
+          if(!resp.ok) {
+            console.warn("Pin update to server failed:", resp.status);
+          } else {
+            console.log("Pin updated on server.");
+          }
+        }catch(e){
+          console.warn("Pin update to server error (proxy/write may be blocked):", e);
+        }
+      }catch(err){
+        console.error("togglePin error", err);
+      }
+    }
+
+    document.addEventListener('DOMContentLoaded', async ()=>{
+      try{
+        const cached = await getMoviesFromDB();
+        if(cached && cached.length){
+          allMovies = cached.slice().sort((a,b)=> (b.releasedAt||0)-(a.releasedAt||0));
+          sortWithPinned(allMovies);
+          filtered = allMovies; page = 1; render(); setupInfiniteScroll();
+        }
+      }catch(e){  }
+
+      revalidateNow();
+      setInterval(()=>{ if(!document.hidden) revalidateNow(); }, REVALIDATE_INTERVAL);
+      window.addEventListener('focus', ()=> revalidateNow());
+      document.addEventListener('visibilitychange', ()=>{
+        if(document.visibilityState === 'visible') revalidateNow();
+      });
     });
-  });
   </script>
 </body>
 </html>
