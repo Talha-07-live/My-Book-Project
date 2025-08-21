@@ -50,9 +50,9 @@ html,body{height:100%;margin:0;font-family:Poppins, system-ui, -apple-system, Se
 .grad{position:absolute;inset:auto 0 0 0;height:52%;background:linear-gradient(180deg,transparent,rgba(0,0,0,.9));pointer-events:none;z-index:5;}
 .ribbon{position:absolute;top:10px;left:10px;background:linear-gradient(90deg,#ff6b6b,#f06595);color:#fff;font-weight:800;padding:6px 10px;border-radius:8px;box-shadow:0 6px 18px rgba(0,0,0,.35);font-size:12px;letter-spacing:.4px;z-index:20;}
 .badge{position:absolute;bottom:12px;right:12px;background:#1b1530;border:1px solid #2a2348;padding:6px 8px;border-radius:8px;color:#d6d2e6;font-weight:700;font-size:12px;z-index:20;}
-/* age: show below card (bottom-left) as you requested */
+
 .age{position:absolute;bottom:12px;left:12px;display:flex;align-items:center;gap:6px;background:rgba(0,0,0,.55);backdrop-filter:blur(6px);padding:6px 10px;border-radius:999px;font-size:12px;z-index:22;color:#d9d6e6;}
-.meta{padding:10px 12px 52px;} /* extra bottom padding so bottom-left age doesn't overlap meta */
+.meta{padding:10px 12px 40px;}
 .title{font-weight:800;font-size:clamp(13px,2.4vw,16px);line-height:1.35;margin:0 0 6px 0;color:#faf8ff;}
 .subtitle{margin:0;color:var(--muted);font-size:clamp(10px,2vw,12px);}
 .modal{position:fixed;inset:0;background:rgba(0,0,0,.75);display:none;align-items:center;justify-content:center;padding:16px;z-index:99;}
@@ -165,29 +165,29 @@ html,body{height:100%;margin:0;font-family:Poppins, system-ui, -apple-system, Se
       measurementId: "G-F763MR7FR9"
     };
 
-    // your deployed worker proxy
+
     const PROXY_BASE = "https://talhasproxy.talhascollection0.workers.dev"; // <<< CHANGE THIS to your Worker URL
 
-    // ========== DOM REFS ==========
+
     const grid = document.getElementById('grid');
     const sentinel = document.getElementById('sentinel');
     const searchInput = document.getElementById('search');
     const searchBtn = document.getElementById('searchBtn');
     const sugg = document.getElementById('sugg');
 
-    // skeletons while loading
+
     const makeSkeletons = (n=12)=>{
       grid.innerHTML = '';
       for(let i=0;i<n;i++) grid.appendChild(Object.assign(document.createElement('div'),{className:'skeleton'}));
     };
     makeSkeletons();
 
-    // helpers
+
     const clamp = (n,min,max)=> Math.min(max, Math.max(min, n));
     function debounce(fn, delay=120){ let t; return (...a)=>{ clearTimeout(t); t=setTimeout(()=>fn(...a), delay); }; }
     function throttle(fn, wait=200){ let last=0, timer; return (...a)=>{ const now=Date.now(); const remaining = wait - (now - last); if(remaining<=0){ last=now; fn(...a); } else if(!timer){ timer=setTimeout(()=>{ last=Date.now(); timer=null; fn(...a); }, remaining); } }; }
 
-    // timeAgo: friendly strings (uses ms timestamp)
+
     function timeAgo(ms){
       if(!ms) return '';
       const then = Number(ms);
@@ -210,20 +210,20 @@ html,body{height:100%;margin:0;font-family:Poppins, system-ui, -apple-system, Se
       return `${year} year${year>1 ? 's' : ''} ago`;
     }
 
-    // try to derive milliseconds timestamp from various fields in movie object
+
     function getTimestampFromMovie(m){
-      // prefer releasedAt, then createdAt
+
       if(m == null) return null;
       const tryNum = v => {
         if(v == null) return null;
         const n = Number(v);
-        if(!isNaN(n) && n > 1000000000000) return n; // likely ms timestamp (> ~2001)
+        if(!isNaN(n) && n > 1000000000000) return n;
         return null;
       };
       const a = tryNum(m.releasedAt) || tryNum(m.createdAt) || null;
       if(a) return a;
 
-      // sometimes saved as seconds (not ms) — detect and convert
+
       const trySec = v => {
         if(v == null) return null;
         const n = Number(v);
@@ -233,7 +233,7 @@ html,body{height:100%;margin:0;font-family:Poppins, system-ui, -apple-system, Se
       const b = trySec(m.releasedAt) || trySec(m.createdAt);
       if(b) return b;
 
-      // fallback: if separate year/month/day/hour/minute fields exist
+
       try{
         const y = Number(m.year);
         const mo = Number(m.month);
@@ -244,9 +244,9 @@ html,body{height:100%;margin:0;font-family:Poppins, system-ui, -apple-system, Se
           const ss = Number(m.second) || 0;
           return new Date(y, mo - 1, d, hh, mm, ss).getTime();
         }
-      }catch(e){ /* ignore */ }
+      }catch(e){ /* Talha */ }
 
-      // maybe there's a textual field
+
       if(m.releasedAtText){
         const parsed = Date.parse(String(m.releasedAtText));
         if(!isNaN(parsed)) return parsed;
@@ -254,7 +254,7 @@ html,body{height:100%;margin:0;font-family:Poppins, system-ui, -apple-system, Se
       return null;
     }
 
-    // IndexedDB helpers (movieCacheDB)
+
     function openDB(){
       return new Promise((resolve, reject)=>{
         const req = indexedDB.open('movieCacheDB', 2);
@@ -318,7 +318,7 @@ html,body{height:100%;margin:0;font-family:Poppins, system-ui, -apple-system, Se
       await txComplete(tx);
     }
 
-    // app state
+
     let allMovies = [];
     let filtered = [];
     let pageSize = 10;
@@ -379,14 +379,14 @@ html,body{height:100%;margin:0;font-family:Poppins, system-ui, -apple-system, Se
 
         const grad = document.createElement('div'); grad.className = 'grad';
 
-        // compute timestamp and human-readable ago
+
         const ts = getTimestampFromMovie(m);
         const relText = ts ? timeAgo(ts) : (m.releasedAtText || '');
         const age = document.createElement('div');
         age.className = 'age';
         age.textContent = relText || '';
 
-        // set full local datetime on hover (title)
+
         if(ts){
           try{ age.title = new Date(Number(ts)).toLocaleString(); }catch(e){}
         } else if(m.releasedAtText){
@@ -403,7 +403,7 @@ html,body{height:100%;margin:0;font-family:Poppins, system-ui, -apple-system, Se
         const st = document.createElement('p'); st.className='subtitle'; st.textContent = m.subtitle || (m.description? String(m.description).slice(0,80): '') || '';
         meta.appendChild(t); meta.appendChild(st);
 
-        // pinned star visual
+
         if(m.pinned){
           const star = document.createElement('div');
           star.className = 'pin-star';
@@ -415,7 +415,7 @@ html,body{height:100%;margin:0;font-family:Poppins, system-ui, -apple-system, Se
         card.appendChild(img);
         card.appendChild(grad);
         card.appendChild(meta);
-        card.appendChild(age);   // age appended after meta so it visually sits bottom-left
+        card.appendChild(age);
         card.appendChild(badge);
 
         card.addEventListener('click',()=>openModal(m));
@@ -442,7 +442,7 @@ html,body{height:100%;margin:0;font-family:Poppins, system-ui, -apple-system, Se
       observer.observe(sentinel);
     };
 
-    // search & suggestions (unchanged)
+
     const doSearch = ()=>{
       const q = searchInput.value.trim().toLowerCase();
       if(!q){ filtered = allMovies; page = 1; hideSuggestions(); render(); return; }
@@ -492,11 +492,11 @@ html,body{height:100%;margin:0;font-family:Poppins, system-ui, -apple-system, Se
 
     const REVALIDATE_INTERVAL = 5 * 60 * 1000;
 
-    // Initialize Firebase app
+
     initializeApp(firebaseConfig);
     const db = getDatabase();
 
-    // ===== proxy fetch & long-poll subscription logic =====
+
     async function fetchMoviesFromServer(){
       try {
         const targetUrl = `${firebaseConfig.databaseURL.replace(/\/+$/, '')}/movies.json`;
@@ -541,7 +541,7 @@ html,body{height:100%;margin:0;font-family:Poppins, system-ui, -apple-system, Se
       }
     }
 
-    // version + events polling endpoints on worker:
+
     async function getVersionFromProxy(){
       try{
         const targetUrl = `${firebaseConfig.databaseURL.replace(/\/+$/, '')}/movies.json`;
@@ -552,7 +552,7 @@ html,body{height:100%;margin:0;font-family:Poppins, system-ui, -apple-system, Se
       }catch(e){ return 0; }
     }
 
-    // subscribe loop (long-poll)
+
     let _stopPolling = false;
     async function subscribeToChangesLoop(){
       let lastVersion = await getVersionFromProxy();
@@ -571,7 +571,7 @@ html,body{height:100%;margin:0;font-family:Poppins, system-ui, -apple-system, Se
             lastVersion = data.version || Date.now();
             await fetchMoviesFromServer();
           } else {
-            // no change; loop continues
+
           }
         }catch(e){
           console.warn('long-poll error', e);
@@ -580,7 +580,7 @@ html,body{height:100%;margin:0;font-family:Poppins, system-ui, -apple-system, Se
       }
     }
 
-    // togglePin: optimistic UI + update local DB + proxy PATCH to origin (proxy refreshes KV)
+
     async function togglePin(movie){
       try{
         movie.pinned = !movie.pinned;
@@ -614,7 +614,7 @@ html,body{height:100%;margin:0;font-family:Poppins, system-ui, -apple-system, Se
       }
     }
 
-    // Initialize flow
+
     (async function init(){
       try{
         const localMovies = await getMoviesFromDB();
@@ -627,15 +627,15 @@ html,body{height:100%;margin:0;font-family:Poppins, system-ui, -apple-system, Se
 
       await fetchMoviesFromServer();
 
-      // start subscription loop for near-real-time updates
+
       subscribeToChangesLoop();
 
-      // revalidate on focus
+
       document.addEventListener('visibilitychange', ()=> { if(!document.hidden) fetchMoviesFromServer(); });
       window.addEventListener('focus', ()=> fetchMoviesFromServer());
     })();
 
-    // Modal & links
+
     const modal = document.getElementById('modal');
     const mPoster = document.getElementById('m-poster');
     const mTitle = document.getElementById('m-title');
@@ -671,7 +671,7 @@ html,body{height:100%;margin:0;font-family:Poppins, system-ui, -apple-system, Se
       modal.classList.add('show');
     }
 
-    // hide suggestions on outside click
+
     document.addEventListener('click', (e)=>{ if(!sugg.contains(e.target) && e.target!==searchInput) hideSuggestions(); });
 
   </script>
