@@ -8,9 +8,6 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <link rel="icon" href="https://s10.gifyu.com/images/SrMU9.png">
-
-  <!-- Flatpickr CSS -->
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
   <style>
     :root{ --bg:#0c0714; --panel:#161129; --muted:#a7a4b4; --primary:#19d3ff; --primary-2:#4f46e5; }
     *{box-sizing:border-box}
@@ -22,7 +19,7 @@
     .row{display:grid;gap:12px;grid-template-columns:1fr}
     @media(min-width:720px){ .row{grid-template-columns:1fr 1fr} }
     label{font-weight:700;font-size:14px;margin-bottom:6px;display:block}
-    input[type="text"], input[type="url"], input[type="password"], input[type="email"], textarea, select{
+    input[type="text"], input[type="url"], input[type="date"], input[type="password"], input[type="email"], textarea, select{
       width:100%;background:#0d0a1a;border:1px solid #2a2348;color:#fff;padding:12px 14px;border-radius:10px;outline:none;transition:.2s
     }
     textarea{min-height:110px;resize:vertical}
@@ -93,7 +90,7 @@
         </div>
         <div>
           <label>Released Date</label>
-          <input type="text" id="releasedDate" placeholder="Select date" />
+          <input type="date" id="releasedDate" />
         </div>
         <div class="flex">
           <label style="margin:0">TRENDING</label>
@@ -118,8 +115,6 @@
     </div>
   </div>
 
-  <!-- Flatpickr JS -->
-  <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
     import { getDatabase, ref, push } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
@@ -214,7 +209,7 @@
 
     document.getElementById('addLink').onclick = ()=> addLinkRow();
 
-    const fields = ['title','poster','subtitle','description','rating','quality'];
+    const fields = ['title','poster','subtitle','description','rating','quality','releasedDate'];
     const checkboxes = ['trending','pin'];
 
     fields.forEach(id=>{
@@ -231,17 +226,6 @@
       el.addEventListener('change', ()=> localStorage.setItem('form_'+id, el.checked));
     });
 
-    // --- FLATPICKR INTEGRATION ---
-    flatpickr("#releasedDate", {
-      dateFormat: "d/m/Y",   // dd/mm/yyyy
-      defaultDate: new Date(),
-      onChange: function(selectedDates, dateStr, instance) {
-        localStorage.setItem('form_releasedDate', dateStr);
-      }
-    });
-    const savedDate = localStorage.getItem('form_releasedDate');
-    if(savedDate) document.getElementById('releasedDate')._flatpickr.setDate(savedDate, true);
-
     document.getElementById('addMovie').onclick = async () => {
       const user = auth.currentUser;
       if(!user || user.uid !== ADMIN_UID){
@@ -257,7 +241,7 @@
       const quality = document.getElementById('quality').value;
       const trending = document.getElementById('trending').checked;
       const pinned = document.getElementById('pin').checked;
-      const releasedDateStr = document.getElementById('releasedDate').value;
+      const releasedDate = document.getElementById('releasedDate').value;
 
       const status = document.getElementById('status');
 
@@ -273,8 +257,7 @@
       }
 
       // ---- Date & Time Fields ----
-      const [d,m,y] = releasedDateStr.split('/').map(x=>parseInt(x));
-      const releasedAt = new Date(y,m-1,d).getTime();
+      const releasedAt = releasedDate ? new Date(releasedDate).getTime() : Date.now();
       const dt = new Date();
 
       const year   = dt.getFullYear();
@@ -308,9 +291,7 @@
         fields.forEach(id=> { document.getElementById(id).value=''; localStorage.removeItem('form_'+id); });
         checkboxes.forEach(id=> { document.getElementById(id).checked=false; localStorage.removeItem('form_'+id); });
         linksContainer.innerHTML = ''; addLinkRow(); localStorage.removeItem('form_links');
-        document.getElementById('releasedDate')._flatpickr.setDate(new Date());
 
-        localStorage.removeItem('form_releasedDate');
         setTimeout(()=> status.textContent='', 2000);
       }catch(e){
         alert('Error: '+e.message);
