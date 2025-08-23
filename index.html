@@ -154,9 +154,19 @@ html,body{height:100%;margin:0;font-family:Poppins, system-ui, -apple-system, Se
 const DATA_SOURCES = [
   'https://data.talhascollection.xo.je/data.json',
   //'https://data.talhascollection.xo.je/data.json',
-  //'https://data.talhascollection.xo.je/data.json,
-  //add more url
+  //'https://data.talhascollection.xo.je/data.json',
+  // ...
 ];
+
+
+const INITIAL_LOAD_COUNT = 5;
+
+
+const BATCH_SIZE = 7;
+
+
+const FETCH_TIMEOUT = 12000;
+
 
 const grid = document.getElementById('grid') || document.getElementById('movies-container');
 const sentinel = document.getElementById('sentinel');
@@ -164,75 +174,44 @@ const searchInput = document.getElementById('search');
 const searchBtn = document.getElementById('searchBtn');
 const sugg = document.getElementById('sugg');
 
-const makeSkeletons = (n=12)=>{
-  if(!grid) return;
-  grid.innerHTML = '';
-  for(let i=0;i<n;i++) grid.appendChild(Object.assign(document.createElement('div'),{className:'skeleton'}));
-};
-makeSkeletons();
 
 const clamp = (n,min,max)=> Math.min(max, Math.max(min, n));
 function debounce(fn, delay=120){ let t; return (...a)=>{ clearTimeout(t); t=setTimeout(()=>fn(...a), delay); }; }
 function throttle(fn, wait=200){ let last=0, timer; return (...a)=>{ const now=Date.now(); const remaining = wait - (now - last); if(remaining<=0){ last=now; fn(...a); } else if(!timer){ timer=setTimeout(()=>{ last=Date.now(); timer=null; fn(...a); }, remaining); } }; }
-
 function timeAgo(ms){
   if(!ms) return '';
   const then = Number(ms);
   if(isNaN(then)) return '';
-  let diff = Date.now() - then;
-  if(diff < 0) diff = 0;
+  let diff = Date.now() - then; if(diff < 0) diff = 0;
   const sec = Math.floor(diff / 1000);
   if(sec < 60) return 'Just now';
-  const min = Math.floor(sec / 60);
-  if(min < 60) return `${min} minute${min>1 ? 's' : ''} ago`;
-  const hr = Math.floor(min / 60);
-  if(hr < 24) return `${hr} hour${hr>1 ? 's' : ''} ago`;
-  const day = Math.floor(hr / 24);
-  if(day < 7) return `${day} day${day>1 ? 's' : ''} ago`;
-  const week = Math.floor(day / 7);
-  if(week < 5) return `${week} week${week>1 ? 's' : ''} ago`;
-  const month = Math.floor(day / 30);
-  if(month < 12) return `${month} month${month>1 ? 's' : ''} ago`;
-  const year = Math.floor(day / 365);
-  return `${year} year${year>1 ? 's' : ''} ago`;
+  const min = Math.floor(sec / 60); if(min < 60) return `${min} minute${min>1 ? 's' : ''} ago`;
+  const hr = Math.floor(min / 60); if(hr < 24) return `${hr} hour${hr>1 ? 's' : ''} ago`;
+  const day = Math.floor(hr / 24); if(day < 7) return `${day} day${day>1 ? 's' : ''} ago`;
+  const week = Math.floor(day / 7); if(week < 5) return `${week} week${week>1 ? 's' : ''} ago`;
+  const month = Math.floor(day / 30); if(month < 12) return `${month} month${month>1 ? 's' : ''} ago`;
+  const year = Math.floor(day / 365); return `${year} year${year>1 ? 's' : ''} ago`;
 }
-
 function sanitizeRating(raw){
   if(raw === null || raw === undefined) return 'N/A';
-  let s = String(raw).trim();
-  s = s.replace(/<[^>]*>/g,'').trim();
+  let s = String(raw).trim(); s = s.replace(/<[^>]*>/g,'').trim();
   const pat = s.match(/(\d+(\.\d+)?\/\d+)|(\d+(\.\d+)?)/);
-  if(pat && pat[0]) {
-    return pat[0].slice(0,7);
-  }
+  if(pat && pat[0]) return pat[0].slice(0,7);
   if(s.length > 8) s = s.slice(0,8) + '…';
   return s || 'N/A';
 }
 
 
-function openDB(){
-  return new Promise((resolve, reject)=>{
-    const req = indexedDB.open('movieCacheDB', 2);
-    req.onerror = ()=> reject(req.error);
-    req.onsuccess = ()=> resolve(req.result);
-    req.onupgradeneeded = ()=> {
-      const db = req.result;
-      if(!db.objectStoreNames.contains('movies')){
-        db.createObjectStore('movies', { keyPath: 'id' });
-      }
-      if(!db.objectStoreNames.contains('meta')){
-        db.createObjectStore('meta', { keyPath: 'key' });
-      }
-    };
-  });
-}
-function txComplete(tx){
-  return new Promise((resolve, reject)=>{
-    tx.oncomplete = ()=> resolve();
-    tx.onerror = ()=> reject(tx.error || new Error('Transaction error'));
-    tx.onabort = ()=> reject(tx.error || new Error('Transaction aborted'));
-  });
-}
+function openDB(){ return new Promise((resolve, reject)=>{ const req = indexedDB.open('movieCacheDB', 2);
+  req.onerror = ()=> reject(req.error);
+  req.onsuccess = ()=> resolve(req.result);
+  req.onupgradeneeded = ()=> {
+    const db = req.result;
+    if(!db.objectStoreNames.contains('movies')) db.createObjectStore('movies', { keyPath: 'id' });
+    if(!db.objectStoreNames.contains('meta')) db.createObjectStore('meta', { keyPath: 'key' });
+  };
+});}
+function txComplete(tx){ return new Promise((resolve, reject)=>{ tx.oncomplete = ()=> resolve(); tx.onerror = ()=> reject(tx.error || new Error('Transaction error')); tx.onabort = ()=> reject(tx.error || new Error('Transaction aborted')); });}
 async function saveMoviesToDB(movies){
   try{
     const db = await openDB();
@@ -246,20 +225,14 @@ async function saveMoviesToDB(movies){
     console.log('✅ Saved to DB');
   }catch(e){ console.warn('saveMoviesToDB failed', e); }
 }
-async function getMoviesFromDB(){
-  try{
-    const db = await openDB();
-    const tx = db.transaction('movies','readonly');
-    const s = tx.objectStore('movies');
-    return new Promise(res=>{ const r = s.getAll(); r.onsuccess=()=>res(r.result||[]); r.onerror=()=>res([]); });
-  }catch(e){ return []; }
-}
+async function getMoviesFromDB(){ try{ const db = await openDB(); const tx = db.transaction('movies','readonly'); const s = tx.objectStore('movies'); return new Promise(res=>{ const r = s.getAll(); r.onsuccess=()=>res(r.result||[]); r.onerror=()=>res([]); }); }catch(e){ return []; }}
 
 
-function fetchJSONWithTimeout(url, timeout = 12000){
+function fetchJSONWithTimeout(url, timeout = FETCH_TIMEOUT){
   return new Promise((resolve, reject) => {
-    const timer = setTimeout(()=> reject(new Error('timeout')), timeout);
-    fetch(url, { method: 'GET', headers: { 'Accept': 'application/json' }, cache:'no-store' })
+    const controller = new AbortController();
+    const timer = setTimeout(()=>{ controller.abort(); reject(new Error('timeout')); }, timeout);
+    fetch(url, { method: 'GET', headers: { 'Accept': 'application/json' }, cache:'no-store', signal: controller.signal })
       .then(r=>{
         clearTimeout(timer);
         if(!r.ok) return reject(new Error(`HTTP ${r.status}`));
@@ -268,6 +241,7 @@ function fetchJSONWithTimeout(url, timeout = 12000){
       .catch(err=> { clearTimeout(timer); reject(err); });
   });
 }
+
 
 function normalizeSourceData(json){
   if(!json) return [];
@@ -279,27 +253,20 @@ function normalizeSourceData(json){
     }).filter(Boolean);
   }
   if(typeof json === 'object'){
-    const entries = Object.entries(json);
+    const entries = Object.entries(json || {});
     const isMapLike = entries.length > 0 && entries[0][1] && typeof entries[0][1] === 'object';
-    if(isMapLike){
-      return entries.map(([id, val]) => Object.assign({}, val || {}, { id: String(id) }));
-    }
-    if(json.id || json.title){
-      return [ Object.assign({}, json, { id: String(json.id || (`__gen_obj_${String(json.title||'').slice(0,20)}`)) }) ];
-    }
+    if(isMapLike) return entries.map(([id, val]) => Object.assign({}, val || {}, { id: String(id) }));
+    if(json.id || json.title) return [ Object.assign({}, json, { id: String(json.id || (`__gen_obj_${String(json.title||'').slice(0,20)}`)) }) ];
   }
   return [];
 }
 
 function mergeMovie(a, b){
-  if(!a) return b;
-  if(!b) return a;
+  if(!a) return b; if(!b) return a;
   const out = Object.assign({}, a);
-  const aAt = Number(a.releasedAt || 0);
-  const bAt = Number(b.releasedAt || 0);
+  const aAt = Number(a.releasedAt || 0); const bAt = Number(b.releasedAt || 0);
   const primary = (bAt && bAt > aAt) ? b : a;
   const secondary = primary === b ? a : b;
-
   const fields = new Set([...Object.keys(primary), ...Object.keys(secondary)]);
   fields.forEach(k=>{
     if(k === 'tags'){
@@ -309,8 +276,7 @@ function mergeMovie(a, b){
     } else if(k === 'downloadLinks' || k === 'links'){
       const la = Array.isArray(a.downloadLinks) ? a.downloadLinks : (Array.isArray(a.links)? a.links : []);
       const lb = Array.isArray(b.downloadLinks) ? b.downloadLinks : (Array.isArray(b.links)? b.links : []);
-      const merged = [];
-      const seen = new Set();
+      const merged = []; const seen = new Set();
       for(const it of [...(la||[]), ...(lb||[])]) {
         if(!it) continue;
         const url = (typeof it === 'string') ? it : (it.url || it.link || '');
@@ -334,51 +300,17 @@ function mergeMovie(a, b){
       out[k] = (primary[k] !== undefined && primary[k] !== null && String(primary[k]).trim() !== '') ? primary[k] : secondary[k];
     }
   });
-
   return out;
 }
-
 function mergeMoviesList(list){
   const map = new Map();
   for(const m of list){
     if(!m || !m.id) continue;
     const id = String(m.id);
-    if(map.has(id)){
-      map.set(id, mergeMovie(map.get(id), m));
-    } else {
-      map.set(id, m);
-    }
+    if(map.has(id)) map.set(id, mergeMovie(map.get(id), m));
+    else map.set(id, m);
   }
   return Array.from(map.values());
-}
-
-async function fetchAllSourcesAndMerge(urls){
-  const fetchPromises = urls.map(u=>{
-    const sep = u.includes('?') ? '&' : '?';
-    return fetchJSONWithTimeout(u + sep + 't=' + Date.now()).then(data => ({ url:u, ok:true, data })).catch(err => ({ url:u, ok:false, error:err }));
-  });
-
-  const results = await Promise.all(fetchPromises);
-  const good = results.filter(r => r.ok && r.data);
-  if(!good.length){
-    console.warn('All sources failed:', results);
-    return { status: 'error', details: results };
-  }
-
-  let combined = [];
-  for(const r of good){
-    try{
-      const norm = normalizeSourceData(r.data);
-      combined = combined.concat(norm);
-      console.log(`Loaded ${norm.length} items from ${r.url}`);
-    }catch(e){
-      console.warn('normalize failed for', r.url, e);
-    }
-  }
-
-  const merged = mergeMoviesList(combined);
-  merged.forEach(m=>{ if(m.releasedAt && !isNaN(Number(m.releasedAt))) m.releasedAt = Number(m.releasedAt); });
-  return { status: 'ok', count: merged.length, movies: merged, rawResults: results };
 }
 
 
@@ -388,6 +320,7 @@ let pageSize = 30;
 let page = 1;
 let observer;
 let imgObserver;
+
 
 const setupImgObserver = ()=>{
   imgObserver && imgObserver.disconnect();
@@ -407,6 +340,7 @@ const setupImgObserver = ()=>{
   },{rootMargin:'200px 0px'});
 };
 
+
 function sortWithPinned(arr){
   arr.sort((a,b)=>{
     if(a.pinned && !b.pinned) return -1;
@@ -414,6 +348,7 @@ function sortWithPinned(arr){
     return (b.releasedAt||0) - (a.releasedAt||0);
   });
 }
+
 
 const render = debounce(()=>{
   if(!grid) return;
@@ -490,6 +425,7 @@ const render = debounce(()=>{
   grid.querySelectorAll('img[data-src]').forEach(img=> imgObserver.observe(img));
 }, 120);
 
+
 const setupInfiniteScroll = ()=>{
   if(!sentinel) return;
   observer && observer.disconnect();
@@ -503,6 +439,7 @@ const setupInfiniteScroll = ()=>{
   }, { rootMargin: '400px 0px' });
   observer.observe(sentinel);
 };
+
 
 const doSearch = ()=>{
   const q = (searchInput && searchInput.value) ? searchInput.value.trim().toLowerCase() : '';
@@ -523,11 +460,9 @@ document.addEventListener('click', (e)=>{ if(sugg && !sugg.contains(e.target) &&
 
 function showSuggestions(q){
   if(!q || !sugg){ hideSuggestions(); return; }
-  const max = 10;
-  const items = [];
+  const max = 10; const items = [];
   for(const m of allMovies){
-    const title = (m.title||'');
-    const subtitle = (m.subtitle||'');
+    const title = (m.title||''); const subtitle = (m.subtitle||'');
     if(title.toLowerCase().includes(q) || subtitle.toLowerCase().includes(q)){
       items.push({id:m.id, title, subtitle});
       if(items.length>=max) break;
@@ -539,41 +474,142 @@ function showSuggestions(q){
     const row = document.createElement('div');
     row.className = 'sugg-item';
     row.innerHTML = `<span>${it.title}</span><small>${it.subtitle? it.subtitle.slice(0,36): ''}</small>`;
-    row.addEventListener('click', ()=>{
-      if(searchInput) searchInput.value = it.title;
-      hideSuggestions();
-      doSearch();
-    });
+    row.addEventListener('click', ()=>{ if(searchInput) searchInput.value = it.title; hideSuggestions(); doSearch(); });
     sugg.appendChild(row);
   }
   sugg.classList.add('show');
 }
 function hideSuggestions(){ if(sugg) sugg.classList.remove('show'); }
 
-async function fetchMoviesFromServer(){
-  try {
-    const res = await fetchAllSourcesAndMerge(DATA_SOURCES);
-    if(res.status !== 'ok' || !Array.isArray(res.movies)){
-      console.error('Multi-source fetch failed or returned no movies', res);
-      return { status: 'error', details: res };
-    }
-    const arr = res.movies.map(m => ({ id: String(m.id), ...m }));
-    sortWithPinned(arr);
-    allMovies = arr;
-    filtered = allMovies;
-    page = 1;
-    render();
-    setupInfiniteScroll();
 
-    if ('requestIdleCallback' in window) {
-      requestIdleCallback(() => saveMoviesToDB(allMovies), { timeout: 1000 });
+const fetchedSet = new Set();
+let pendingSources = Array.from(DATA_SOURCES || []);
+
+
+async function fetchAndNormalizeSource(url){
+  try{
+    const sep = url.includes('?') ? '&' : '?';
+    const json = await fetchJSONWithTimeout(url + sep + 't=' + Date.now(), FETCH_TIMEOUT);
+    return normalizeSourceData(json || {});
+  }catch(err){
+    console.warn('fetch failed for', url, err);
+    return null;
+  }
+}
+
+
+async function fetchAndMergeUrls(urls){
+  const promises = urls.map(u => fetchAndNormalizeSource(u));
+  const results = await Promise.all(promises);
+  let combined = [];
+  for(let i=0;i<results.length;i++){
+    const res = results[i];
+    if(Array.isArray(res)) combined = combined.concat(res);
+  }
+  return mergeMoviesList(combined);
+}
+
+
+async function integrateNewMovies(newMovies){
+  if(!Array.isArray(newMovies) || !newMovies.length) return;
+  
+  const merged = mergeMoviesList([ ...allMovies, ...newMovies ]);
+  
+  merged.forEach(m=>{ if(m.releasedAt && !isNaN(Number(m.releasedAt))) m.releasedAt = Number(m.releasedAt); });
+  sortWithPinned(merged);
+  allMovies = merged;
+  filtered = allMovies;
+  page = 1;
+  render();
+  setupInfiniteScroll();
+ 
+  if('requestIdleCallback' in window) requestIdleCallback(()=> saveMoviesToDB(allMovies), { timeout: 1000 });
+  else setTimeout(()=> saveMoviesToDB(allMovies), 500);
+}
+
+
+async function loadBatch(startIndex, batchSize){
+  const batch = pendingSources.slice(startIndex, startIndex + batchSize);
+  if(!batch.length) return;
+  
+  batch.forEach(u => fetchedSet.add(u));
+  const movies = await fetchAndMergeUrls(batch);
+  await integrateNewMovies(movies);
+}
+
+
+async function progressiveLoadAll(){
+  
+  pendingSources = Array.from(DATA_SOURCES || []);
+  
+  const initial = pendingSources.slice(0, INITIAL_LOAD_COUNT);
+  
+  initial.forEach(u => fetchedSet.add(u));
+  try{
+    const initialMovies = await fetchAndMergeUrls(initial);
+    await integrateNewMovies(initialMovies);
+    console.log('Initial load done:', initial.length);
+  }catch(e){ console.warn('Initial load error', e); }
+
+  
+  let idx = INITIAL_LOAD_COUNT;
+  const total = pendingSources.length;
+
+  
+  const loadNextChunk = async ()=>{
+    if(idx >= total) return;
+    const nextBatch = pendingSources.slice(idx, idx + BATCH_SIZE);
+    nextBatch.forEach(u => fetchedSet.add(u));
+    try{
+      const movies = await fetchAndMergeUrls(nextBatch);
+      await integrateNewMovies(movies);
+      console.log('Loaded batch', idx, 'count', nextBatch.length);
+    }catch(e){ console.warn('batch load failed', e); }
+    idx += BATCH_SIZE;
+   
+    if(idx < total){
+      scheduleBackgroundLoad();
     } else {
-      setTimeout(() => saveMoviesToDB(allMovies), 0);
+      console.log('All source batches loaded.');
     }
-    console.log(`✅ Movies fetched & merged. Count=${allMovies.length}`);
+  };
+
+  
+  function scheduleBackgroundLoad(){
+    if('requestIdleCallback' in window){
+      requestIdleCallback(async (deadline)=>{
+        
+        await loadNextChunk();
+      }, { timeout: 2000 });
+    } else {
+     
+      setTimeout(()=> loadNextChunk(), 700);
+    }
+  }
+
+
+  if(idx < total) scheduleBackgroundLoad();
+
+
+  const quickLoadOnScroll = throttle(()=>{
+ 
+    if(idx < total){
+      loadNextChunk();
+    }
+  }, 2000);
+  window.addEventListener('scroll', quickLoadOnScroll, { passive: true });
+
+
+  window.addEventListener('focus', ()=> { if(idx < total) scheduleBackgroundLoad(); });
+}
+
+
+async function fetchMoviesFromServer(){
+  try{
+    await progressiveLoadAll();
     return { status: 'ok', count: allMovies.length };
-  } catch(err) {
-    console.error("❌ Fetch error:", err);
+  }catch(err){
+    console.error('Progressive fetch error', err);
     return { status: 'error', error: err };
   }
 }
@@ -635,7 +671,8 @@ function openModal(m){
 
   window.addEventListener('focus', ()=> fetchMoviesFromServer());
 
-  setInterval(fetchMoviesFromServer, 1800000);
+
+  setInterval(()=> fetchMoviesFromServer(), 1800000);
 })();
 </script>
 </body>
