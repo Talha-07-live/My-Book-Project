@@ -245,33 +245,47 @@ function openDB(){ return new Promise((resolve, reject)=>{ const req = indexedDB
 });}
 function txComplete(tx){ return new Promise((resolve, reject)=>{ tx.oncomplete = ()=> resolve(); tx.onerror = ()=> reject(tx.error || new Error('Transaction error')); tx.onabort = ()=> reject(tx.error || new Error('Transaction aborted')); });}
 
-async function saveMoviesToDB(movies){
-  try{
+async function saveMoviesIncremental(movies){
+  try {
     const db = await openDB();
-    // Clear using a short tx first to avoid long‑running combined ops
-    {
-      const tx = db.transaction(['movies'], 'readwrite');
-      const s = tx.objectStore('movies');
-      await new Promise(res=>{ const r = s.clear(); r.onsuccess=()=>res(); r.onerror=()=>res(); });
-      await txComplete(tx);
-    }
-    // Write in chunks to keep each tx small and responsive
+    const tx = db.transaction(['movies','meta'], 'readwrite');
+    const store = tx.objectStore('movies');
+
+    // Existing items map
+    const existingItems = await new Promise(res=>{
+      const r = store.getAll();
+      r.onsuccess=()=> res(r.result||[]);
+      r.onerror=()=> res([]);
+    });
+    const existingMap = new Map(existingItems.map(m=>[m.id, m]));
+
     for(let i=0;i<movies.length;i+=SAVE_CHUNK_SIZE){
       const slice = movies.slice(i, i+SAVE_CHUNK_SIZE);
-      const tx = db.transaction(['movies','meta'], 'readwrite');
-      const s = tx.objectStore('movies');
-      for(const x of slice) s.put(x);
-      const m = tx.objectStore('meta');
-      if(i + SAVE_CHUNK_SIZE >= movies.length) m.put({ key: 'movies_updatedAt', value: Date.now() });
+      for(const item of slice){
+        const existing = existingMap.get(item.id);
+        if(!existing){
+          // New item → insert
+          store.put(item);
+        } else {
+          // Merge changes
+          store.put(mergeMovie(existing, item));
+        }
+      }
       await txComplete(tx);
-      // yield back to UI between chunks
-      await new Promise(requestAnimationFrame);
+      await new Promise(requestAnimationFrame); // yield main thread
     }
-    console.log('✅ Saved to DB (', movies.length, 'items )');
-  }catch(e){ console.warn('saveMoviesToDB failed', e); }
-}
-async function getMoviesFromDB(){ try{ const db = await openDB(); const tx = db.transaction('movies','readonly'); const s = tx.objectStore('movies'); return new Promise(res=>{ const r = s.getAll(); r.onsuccess=()=>res(r.result||[]); r.onerror=()=>res([]); }); }catch(e){ return []; }}
 
+    // Update meta
+    const metaTx = db.transaction('meta','readwrite');
+    metaTx.objectStore('meta').put({ key:'movies_updatedAt', value:Date.now() });
+    await txComplete(metaTx);
+
+    console.log('✅ Incremental save done (', movies.length, 'items)');
+  } catch(e) {
+    console.warn('saveMoviesIncremental failed', e);
+  }
+}
+  
 /* ==== Networking primitives ==== */
 function fetchWithTimeout(url, opts={}, timeout = FETCH_TIMEOUT){
   return new Promise((resolve, reject) => {
@@ -371,7 +385,7 @@ function mergeMoviesList(list){
 /* ==== State ==== */
 let allMovies = [];
 let filtered = [];
-let pageSize = 30;
+let pageSize = 10;
 let page = 1;
 let observer; let imgObserver;
 let isLoading = false; let lastFullLoadTs = 0;
@@ -583,8 +597,8 @@ async function integrateNewMovies(newMovies){
   filtered = qActive ? allMovies.filter(m=> (m._t && m._t.includes(currentQuery())) || (m._s && m._s.includes(currentQuery())) ) : allMovies;
   if(!lastRenderedCount || !qActive){ page = 1; lastRenderedCount = 0; }
   render(); setupInfiniteScroll();
-  if('requestIdleCallback' in window) requestIdleCallback(()=> saveMoviesToDB(allMovies), { timeout: 1000 });
-  else setTimeout(()=> saveMoviesToDB(allMovies), 500);
+  if('requestIdleCallback' in window) requestIdleCallback(()=> saveMoviesIncremental(allMovies), { timeout: 1000 });
+  else setTimeout(()=> saveMoviesIncremental(allMovies), 500);
 }
 
 async function loadBatch(startIndex, batchSize){
