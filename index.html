@@ -359,11 +359,14 @@ function mergeMovie(a, b){
 }
 function mergeMoviesList(list){
   const map = new Map();
-  for(const m of list){
-    if(!m || !m.id) continue;
+  for (const m of list) {
+    if (!m || !m.id) continue;
     const id = String(m.id);
-    if(map.has(id)) map.set(id, mergeMovie(map.get(id), m));
-    else map.set(id, m);
+    if (map.has(id)) {
+      map.set(id, mergeMovie(map.get(id), m));
+    } else {
+      map.set(id, m);
+    }
   }
   return Array.from(map.values());
 }
