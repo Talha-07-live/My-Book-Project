@@ -150,31 +150,42 @@ html,body{height:100%;margin:0;font-family:Poppins, system-ui, -apple-system, Se
   </footer>
 
 <script type="module">
+/* ==========================================================
+   Ultra‑Scalable Loader — keeps your original structure/flow
+   - Handles 20k+ items and 100MB+ split JSON (progressive)
+   - Concurrency‑limited fetching + idle chunk loading
+   - Chunked IndexedDB saves to prevent main‑thread jank
+   - Incremental render (append only) for smooth scrolling
+   - Auto‑discovery of chunk files: data-1.json, data-2.json, ...
+   - Optional manifest.json support (preferred if present)
+   - Zero breaking changes: same functions, IDs, classes
+   ========================================================== */
 
+/* ==== CONFIG: your data.json links (can be hundreds) ==== */
 const DATA_SOURCES = [
   'https://data.talhascollection.xo.je/data.json',
-  //'https://data.talhascollection.xo.je/manifest.json',
   //'https://data.talhascollection.xo.je/data1.json',
+  //'https://data.talhascollection.xo.je/data2.json',
   // ... add as many static chunk files as you like
 ];
 
+/* ==== TUNABLES (safe defaults) ==== */
+const INITIAL_LOAD_COUNT = 5;       // first burst of sources
+const BATCH_SIZE = 7;               // next chunk size
+const FETCH_TIMEOUT = 12000;        // per‑request timeout ms
+const MAX_CONCURRENCY = 3;          // parallel fetch limit (network‑CPU balance)
+const SAVE_CHUNK_SIZE = 800;        // IDB write batch size (prevents long tx)
+const CONTINUOUS_REFRESH_MS = 30 * 60 * 1000; // 30 min
+const MIN_RELOAD_GAP_MS = 45 * 1000;          // avoid overlapping reloads
 
-const INITIAL_LOAD_COUNT = 5;
-const BATCH_SIZE = 7;
-const FETCH_TIMEOUT = 12000;
-const MAX_CONCURRENCY = 3;
-const SAVE_CHUNK_SIZE = 800;
-const CONTINUOUS_REFRESH_MS = 30 * 60 * 1000;
-const MIN_RELOAD_GAP_MS = 45 * 1000;
-
-
+/* ==== DOM ==== */
 const grid = document.getElementById('grid') || document.getElementById('movies-container');
 const sentinel = document.getElementById('sentinel');
 const searchInput = document.getElementById('search');
 const searchBtn = document.getElementById('searchBtn');
 const sugg = document.getElementById('sugg');
 
-
+/* ==== Small utils ==== */
 const clamp = (n,min,max)=> Math.min(max, Math.max(min, n));
 function debounce(fn, delay=120){ let t; return (...a)=>{ clearTimeout(t); t=setTimeout(()=>fn(...a), delay); }; }
 function throttle(fn, wait=200){ let last=0, timer; return (...a)=>{ const now=Date.now(); const remaining = wait - (now - last); if(remaining<=0){ last=now; fn(...a); } else if(!timer){ timer=setTimeout(()=>{ last=Date.now(); timer=null; fn(...a); }, remaining); } }; }
@@ -201,14 +212,14 @@ function sanitizeRating(raw){
   return s || 'N/A';
 }
 
-
+/* Fast tiny hash for fallback IDs (keeps your structure the same) */
 function fastHash(str){
-  let h = 2166136261 >>> 0; 
+  let h = 2166136261 >>> 0; // FNV‑1a 32bit
   for(let i=0;i<str.length;i++){ h ^= str.charCodeAt(i); h = Math.imul(h, 16777619); }
   return (h >>> 0).toString(36);
 }
 
-
+/* ==== IndexedDB (chunk‑safe) ==== */
 function openDB(){ return new Promise((resolve, reject)=>{ const req = indexedDB.open('movieCacheDB', 3);
   req.onerror = ()=> reject(req.error);
   req.onsuccess = ()=> resolve(req.result);
@@ -226,7 +237,7 @@ async function saveMoviesIncremental(movies){
     const tx = db.transaction(['movies','meta'], 'readwrite');
     const store = tx.objectStore('movies');
 
-    
+    // Existing items map
     const existingItems = await new Promise(res=>{
       const r = store.getAll();
       r.onsuccess=()=> res(r.result||[]);
@@ -239,18 +250,18 @@ async function saveMoviesIncremental(movies){
       for(const item of slice){
         const existing = existingMap.get(item.id);
         if(!existing){
-          
+          // New item → insert
           store.put(item);
         } else {
-          
+          // Merge changes
           store.put(mergeMovie(existing, item));
         }
       }
       await txComplete(tx);
-      await new Promise(requestAnimationFrame);
+      await new Promise(requestAnimationFrame); // yield main thread
     }
 
-    
+    // Update meta
     const metaTx = db.transaction('meta','readwrite');
     metaTx.objectStore('meta').put({ key:'movies_updatedAt', value:Date.now() });
     await txComplete(metaTx);
@@ -261,7 +272,7 @@ async function saveMoviesIncremental(movies){
   }
 }
   
-
+/* ==== Networking primitives ==== */
 function fetchWithTimeout(url, opts={}, timeout = FETCH_TIMEOUT){
   return new Promise((resolve, reject) => {
     const controller = new AbortController();
@@ -281,7 +292,7 @@ function fetchJSONWithTimeout(url, timeout = FETCH_TIMEOUT){
   });
 }
 
-
+/* Normalize/merge identical to your logic, but sturdier fallbacks */
 function normalizeSourceData(json){
   if(!json) return [];
   if(Array.isArray(json)){
@@ -341,7 +352,7 @@ function mergeMovie(a, b){
       out[k] = (primary[k] !== undefined && primary[k] !== null && String(primary[k]).trim() !== '') ? primary[k] : secondary[k];
     }
   });
-  
+  // Light search helpers (won't break structure)
   out._t = (out.title || '').toLowerCase();
   out._s = (out.subtitle || out.description || '').toLowerCase();
   return out;
@@ -357,16 +368,16 @@ function mergeMoviesList(list){
   return Array.from(map.values());
 }
 
-
+/* ==== State ==== */
 let allMovies = [];
 let filtered = [];
 let pageSize = 10;
 let page = 1;
 let observer; let imgObserver;
 let isLoading = false; let lastFullLoadTs = 0;
-let lastRenderedCount = 0;
+let lastRenderedCount = 0; // for incremental append
 
-
+/* ==== Image lazy loader ==== */
 const setupImgObserver = ()=>{
   imgObserver && imgObserver.disconnect();
   imgObserver = new IntersectionObserver((entries)=>{
@@ -393,7 +404,7 @@ function sortWithPinned(arr){
   });
 }
 
-
+/* ==== Render (append‑only when paging) ==== */
 const render = debounce(()=>{
   if(!grid) return;
   const total = filtered.length;
@@ -410,7 +421,7 @@ const render = debounce(()=>{
     return;
   }
 
-  
+  // If we have a fresh search/reset, rebuild from scratch
   if(lastRenderedCount === 0 || lastRenderedCount > upto){
     grid.innerHTML = '';
     lastRenderedCount = 0;
@@ -475,7 +486,7 @@ const render = debounce(()=>{
   lastRenderedCount = upto;
 }, 120);
 
-
+/* ==== Infinite scroll ==== */
 const setupInfiniteScroll = ()=>{
   if(!sentinel) return;
   observer && observer.disconnect();
@@ -490,7 +501,7 @@ const setupInfiniteScroll = ()=>{
   observer.observe(sentinel);
 };
 
-
+/* ==== Search (fast path using pre‑lowercased fields) ==== */
 function currentQuery(){ return (searchInput && searchInput.value) ? searchInput.value.trim().toLowerCase() : ''; }
 const doSearch = ()=>{
   const q = currentQuery();
@@ -527,7 +538,7 @@ function showSuggestions(q){
 }
 function hideSuggestions(){ if(sugg) sugg.classList.remove('show'); }
 
-
+/* ==== Fetch + merge pipeline (pool) ==== */
 const fetchedSet = new Set();
 let pendingSources = [];
 
@@ -584,7 +595,7 @@ async function loadBatch(startIndex, batchSize){
   await integrateNewMovies(movies);
 }
 
-
+/* ==== Auto‑discovery helpers ==== */
 async function tryManifest(baseDir, name){
   try{
     const url = baseDir.replace(/\/$/, '/') + name;
@@ -592,7 +603,7 @@ async function tryManifest(baseDir, name){
     if(!res.ok) return null;
     const data = await res.json().catch(()=>null);
     if(!data) return null;
-    
+    // Accept formats: ["data-1.json", ...] OR {files:[...]} OR {count: N, pattern:"data-{n}.json"}
     let files = [];
     if(Array.isArray(data)) files = data;
     else if(Array.isArray(data.files)) files = data.files;
@@ -607,10 +618,10 @@ async function tryManifest(baseDir, name){
 
 async function urlExists(url){
   try{
-    
+    // Prefer HEAD to avoid downloading large JSONs
     let res = await fetchWithTimeout(url, { method: 'HEAD' }, Math.min(FETCH_TIMEOUT, 6000));
     if(res && (res.status === 200 || res.status === 204)) return true;
-    
+    // Some CDNs disallow HEAD — fallback to tiny ranged GET
     res = await fetchWithTimeout(url, { method: 'GET', headers: { 'Range': 'bytes=0-0' } }, Math.min(FETCH_TIMEOUT, 6000));
     return res && (res.status === 200 || res.status === 206);
   }catch(e){ return false; }
@@ -622,16 +633,16 @@ async function autoDiscoverSources(){
   const baseFileUrl = baseDir + DISCOVERY.baseFile;
   const discovered = new Set();
 
-  
+  // 1) Always try base file quickly
   if(await urlExists(baseFileUrl)) discovered.add(baseFileUrl);
 
-  
+  // 2) Try manifest if preferred
   if(DISCOVERY.preferManifest){
     const m = await tryManifest(baseDir, DISCOVERY.manifestName);
     if(Array.isArray(m) && m.length){ m.forEach(u=>discovered.add(u)); return Array.from(discovered); }
   }
 
-  
+  // 3) Pattern probing in controlled blocks
   let firstHit = discovered.size > 0;
   let missStreak = 0;
   for(let start = DISCOVERY.from; start <= DISCOVERY.to; start += DISCOVERY.stepBlock){
@@ -650,17 +661,17 @@ async function autoDiscoverSources(){
   return Array.from(discovered);
 }
 
-
+/* ==== Progressive loader with discovery ==== */
 async function progressiveLoadAll(){
   const baseSources = Array.from(new Set(DATA_SOURCES || []));
   let sources = baseSources.slice();
   try{
     const auto = await autoDiscoverSources();
     if(auto && auto.length) sources = Array.from(new Set([...sources, ...auto]));
-  }catch(e){ /* Talha */ }
+  }catch(e){ /* ignore discovery errors */ }
 
   pendingSources = sources;
-  if(!pendingSources.length) return; 
+  if(!pendingSources.length) return; // nothing to do
 
   const initial = pendingSources.slice(0, INITIAL_LOAD_COUNT);
   initial.forEach(u => fetchedSet.add(u));
@@ -691,7 +702,7 @@ async function progressiveLoadAll(){
   window.addEventListener('focus', ()=> { if(idx < total) scheduleBackgroundLoad(); });
 }
 
-
+/* ==== Public fetch orchestrator (re‑entry safe) ==== */
 async function fetchMoviesFromServer(){
   if(isLoading && (Date.now() - lastFullLoadTs) < MIN_RELOAD_GAP_MS){ return { status: 'busy' }; }
   isLoading = true; lastFullLoadTs = Date.now();
@@ -700,7 +711,7 @@ async function fetchMoviesFromServer(){
   finally { isLoading = false; }
 }
 
-
+/* ==== Modal ==== */
 const modal = document.getElementById('modal');
 const mPoster = document.getElementById('m-poster');
 const mTitle = document.getElementById('m-title');
@@ -729,7 +740,7 @@ function openModal(m){
   modal.classList.add('show');
 }
 
-
+/* ==== Boot ==== */
 (async function init(){
   try{
     const localMovies = await getMoviesFromDB();
@@ -747,8 +758,8 @@ function openModal(m){
   setInterval(()=> fetchMoviesFromServer(), CONTINUOUS_REFRESH_MS);
 })();
 
-
-window.addEventListener('pagehide', ()=>{ /* Talha */ });
+// tidy up
+window.addEventListener('pagehide', ()=>{ /* room for aborting if you track controllers */ });
 
 </script>
 </body>
