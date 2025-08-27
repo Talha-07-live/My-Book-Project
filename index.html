@@ -91,19 +91,29 @@ html,body{height:100%;margin:0;font-family:Poppins, system-ui, -apple-system, Se
   transform: translateY(16px) scale(0.9);
   pointer-events: none;
   transition: opacity 0.25s ease, transform 0.25s ease;
+  -webkit-tap-highlight-color: transparent;
 }
+
 #toTopBtn.show {
   opacity: 1;
   transform: translateY(0) scale(1);
   pointer-events: auto;
 }
+
 #toTopBtn:hover {
   transform: translateY(-2px) scale(1.05);
   box-shadow: 0 12px 30px rgba(0,0,0,0.5);
 }
+
 #toTopBtn svg {
   width: 15px;
   height: 22px;
+}
+
+#toTopBtn:focus,
+#toTopBtn:focus-visible {
+  outline: none;
+  box-shadow: none;
 }
 .pin-btn{
   position:absolute;top:10px;right:10px;z-index:22;width:36px;height:36px;border-radius:10px;border:1px solid rgba(255,255,255,.06);
