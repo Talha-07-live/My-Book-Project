@@ -3,51 +3,51 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Advanced Firebase Admin — Search & Edit (Optimized)</title>
+  <title>Advanced Firebase Admin — Search & Edit</title>
 
-  <!-- Firebase compat (already used in your other script) -->
+  <!-- Firebase compat -->
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
 
-  <!-- Tailwind for quick nice UI -->
+  <!-- Tailwind CSS -->
   <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
 
-  <!-- Fuse.js for fast client-side full-text search -->
-  <script src="https://cdn.jsdelivr.net/npm/fuse.js@6.7.4/dist/fuse.min.js"></script>
-  <!-- idb (IndexedDB helper) -->
-  <script src="https://cdn.jsdelivr.net/npm/idb@7/build/iife/index-min.js"></script>
-
   <style>
-    /* small tweaks */
     .mono{ font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, "Roboto Mono", monospace }
     pre.json{ white-space: pre-wrap; word-break: break-word; background:#f3f4f6; padding:8px; border-radius:6px }
   </style>
 </head>
-<body class="bg-gray-100 min-h-screen p-6">
-  <div class="max-w-6xl mx-auto">
-    <div class="flex items-center justify-between mb-6">
-      <h1 class="text-2xl font-bold">Advanced Firebase Admin Panel</h1>
-      <div id="authArea" class="flex items-center gap-3">
+<body class="bg-gray-100 min-h-screen">
+
+  <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+
+    <!-- Header / Auth -->
+    <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-6 gap-4 sm:gap-0">
+      <h1 class="text-xl sm:text-2xl font-bold">Advanced Firebase Admin Panel</h1>
+      <div id="authArea" class="flex items-center gap-3 w-full sm:w-auto">
         <div id="userInfo" class="hidden items-center gap-3">
           <span id="uidLabel" class="mono text-sm"></span>
           <button id="btnLogout" class="bg-gray-700 text-white px-3 py-1 rounded">Logout</button>
         </div>
-        <div id="loginBox" class="bg-white p-3 rounded shadow w-96">
+        <div id="loginBox" class="bg-white p-3 rounded shadow w-full sm:w-96">
           <input id="email" class="border p-2 rounded w-full mb-2" placeholder="Admin email">
           <input id="password" type="password" class="border p-2 rounded w-full mb-2" placeholder="Password">
-          <div class="flex gap-2">
-            <button id="btnLogin" class="bg-blue-600 text-white px-4 py-2 rounded flex-1">Login</button>
-            <button id="btnDemo" title="Quick demo (if you want to auto-fill search box)" class="bg-gray-200 px-3 py-2 rounded">Demo</button>
+          <div class="flex flex-col sm:flex-row gap-2">
+            <button id="btnLogin" class="bg-blue-600 text-white px-4 py-2 rounded flex-1 w-full sm:w-auto">Login</button>
+            <button id="btnDemo" title="Quick demo" class="bg-gray-200 px-3 py-2 rounded w-full sm:w-auto">Demo</button>
           </div>
           <p id="loginErr" class="text-red-600 text-sm mt-2"></p>
         </div>
       </div>
     </div>
 
-    <!-- Controls -->
+    <!-- Panel -->
     <div id="panel" class="hidden bg-white p-4 rounded shadow">
-      <div class="grid md:grid-cols-3 gap-3 mb-3">
+
+      <!-- Controls Grid -->
+      <div class="grid sm:grid-cols-2 md:grid-cols-3 gap-3 mb-3">
+
         <div>
           <label class="block text-sm font-semibold mb-1">Search Mode</label>
           <select id="mode" class="border p-2 rounded w-full">
@@ -66,14 +66,15 @@
 
         <div>
           <label class="block text-sm font-semibold mb-1">Options</label>
-          <div class="flex gap-2">
+          <div class="flex flex-col gap-2">
             <label class="flex items-center gap-2"><input type="checkbox" id="searchAllNodes"> Search entire DB (not just /movies)</label>
-          </div>
-          <div class="flex gap-2 mt-2">
-            <button id="btnSearch" class="bg-green-600 text-white px-4 py-2 rounded">Search</button>
-            <button id="btnClear" class="bg-gray-200 px-4 py-2 rounded">Clear</button>
+            <div class="flex flex-col sm:flex-row gap-2 mt-2">
+              <button id="btnSearch" class="bg-green-600 text-white px-4 py-2 rounded flex-1 w-full sm:w-auto">Search</button>
+              <button id="btnClear" class="bg-gray-200 px-4 py-2 rounded flex-1 w-full sm:w-auto">Clear</button>
+            </div>
           </div>
         </div>
+
       </div>
 
       <!-- Live suggestions -->
@@ -82,7 +83,7 @@
       </div>
 
       <!-- Results summary -->
-      <div class="mb-3 flex items-center justify-between">
+      <div class="mb-3 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 sm:gap-0">
         <div class="text-sm text-gray-600" id="summary">No search yet</div>
         <div class="text-sm text-gray-600">Results per page:
           <select id="perPage" class="border p-1 rounded">
@@ -91,7 +92,7 @@
         </div>
       </div>
 
-      <!-- Results table -->
+      <!-- Results Table -->
       <div id="resultsWrapper" class="overflow-x-auto bg-white rounded">
         <table class="min-w-full divide-y">
           <thead class="bg-gray-50">
@@ -107,25 +108,25 @@
       </div>
 
       <!-- Pagination -->
-      <div class="mt-3 flex items-center justify-between">
+      <div class="mt-3 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 sm:gap-0">
         <div>
           <button id="prevPage" class="px-3 py-1 border rounded">Prev</button>
-          <button id="nextPage" class="px-3 py-1 border rounded ml-2">Next</button>
+          <button id="nextPage" class="px-3 py-1 border rounded ml-0 sm:ml-2">Next</button>
         </div>
         <div id="pageInfo" class="text-sm text-gray-600"></div>
       </div>
 
-      <!-- Editor modal (hidden by default) -->
+      <!-- Editor Modal -->
       <div id="editorModal" class="fixed inset-0 hidden items-center justify-center bg-black/50 p-4">
-        <div class="bg-white rounded max-w-3xl w-full p-4">
-          <div class="flex justify-between items-center mb-2">
+        <div class="bg-white rounded max-w-3xl w-full sm:w-11/12 p-4">
+          <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-2 gap-2 sm:gap-0">
             <h3 class="font-semibold">Edit Node: <span id="editPath" class="mono text-sm"></span></h3>
             <div class="flex gap-2">
               <button id="btnApply" class="bg-green-600 text-white px-4 py-1 rounded">Save</button>
               <button id="btnClose" class="bg-gray-200 px-3 py-1 rounded">Close</button>
             </div>
           </div>
-          <div class="grid md:grid-cols-2 gap-3">
+          <div class="grid sm:grid-cols-2 gap-3">
             <div>
               <label class="text-sm font-semibold">Field Editor (form)</label>
               <div id="fieldForm" class="space-y-2 mt-2"></div>
@@ -135,7 +136,7 @@
               <textarea id="rawJson" class="w-full border p-2 rounded h-64 mono"></textarea>
             </div>
           </div>
-          <div class="mt-3 flex gap-2">
+          <div class="mt-3 flex flex-col sm:flex-row gap-2">
             <button id="btnDelete" class="bg-red-600 text-white px-4 py-1 rounded">Delete Node</button>
             <div id="editorMsg" class="text-sm text-gray-600"></div>
           </div>
@@ -144,7 +145,7 @@
 
     </div>
 
-    <!-- small footer -->
+    <!-- Footer -->
     <div class="text-xs text-gray-500 mt-4">
       Note: For very large datasets (>5000 items) client-side full-text can be slow — consider adding a server-side index (Algolia / Elastic / Firebase Functions indexed fields).
     </div>
@@ -177,15 +178,13 @@ const btnLogout = document.getElementById('btnLogout');
 const loginErr = document.getElementById('loginErr');
 const panel = document.getElementById('panel');
 
-auth.onAuthStateChanged(async user=>{
+auth.onAuthStateChanged(user=>{
   if(user && user.uid === ADMIN_UID){
     loginBox.classList.add('hidden');
     userInfo.classList.remove('hidden');
     uidLabel.textContent = user.uid;
     panel.classList.remove('hidden');
     document.getElementById('loginErr').textContent = '';
-    // start cache & prefetch when admin logs in
-    try{ await initCacheAndPrefetch(); }catch(e){ console.warn('Cache init failed', e); }
   } else {
     loginBox.classList.remove('hidden');
     userInfo.classList.add('hidden');
@@ -223,44 +222,9 @@ const pageInfo = document.getElementById('pageInfo');
 let allHits = []; // [{path, key, data}]
 let page = 0;
 
-// NEW: Fuse + IDB cache setup
-let fuse = null;
-let fuseReady = false;
-let cacheDB = null;
-const CACHE_KEY = 'movies_full_v1'; // bump this to invalidate cache
-const BATCH_SIZE = 2000; // number of items per batch fetch from Firebase
-let prefetching = false;
-let totalLoaded = 0;
-
-async function initCacheAndPrefetch(){
-  try{
-    // open idb
-    cacheDB = await idb.openDB('firebaseCache', 1, {
-      upgrade(db){ if(!db.objectStoreNames.contains('movies')) db.createObjectStore('movies'); }
-    });
-
-    // try load cached index
-    const cached = await cacheDB.get('movies', CACHE_KEY);
-    if(cached && Array.isArray(cached) && cached.length){
-      allHits = cached.slice();
-      totalLoaded = allHits.length;
-      prepareFuse(allHits);
-      summary.textContent = `Loaded from cache: ${totalLoaded} item(s).`; 
-      renderResults();
-      // start background refresh to ensure up-to-date
-      startBackgroundPrefetch('/movies', true).catch(e=>console.warn(e));
-    } else {
-      // no cache — start incremental prefetch
-      startBackgroundPrefetch('/movies', false).catch(e=>console.warn(e));
-    }
-  }catch(e){ console.warn('initCache error', e); }
-}
-
 function setSummary(){
-  const per = parseInt(perPageSel.value || 10);
-  const pages = Math.max(1, Math.ceil((allHits.length||0) / per));
-  summary.textContent = `${allHits.length} result(s). Showing page ${page+1} of ${pages}`;
-  pageInfo.textContent = `Page ${page+1} / ${pages}`;
+  summary.textContent = `${allHits.length} result(s). Showing page ${page+1}`;
+  pageInfo.textContent = `Page ${page+1} / ${Math.max(1, Math.ceil(allHits.length / parseInt(perPageSel.value || 10)))}`;
 }
 
 function renderResults(){
@@ -274,13 +238,14 @@ function renderResults(){
     tr.innerHTML = `
       <td class="px-3 py-2 text-sm">${start + i + 1}</td>
       <td class="px-3 py-2 mono text-sm">${hit.path}</td>
-      <td class="px-3 py-2 text-sm">${(hit.data && hit.data.title) ? '<strong>' + escapeHtml(hit.data.title) + '</strong><div class="text-xs text-gray-500>'+ escapeHtml((hit.data.subtitle||'').toString().slice(0,80)) +'</div>' : '<pre class="json mono">'+ escapeHtml(JSON.stringify(hit.data)).slice(0,200) +'</pre>'}</td>
+      <td class="px-3 py-2 text-sm">${(hit.data && hit.data.title) ? '<strong>' + escapeHtml(hit.data.title) + '</strong><div class="text-xs text-gray-500">'+ escapeHtml((hit.data.subtitle||'') .toString().slice(0,80)) +'</div>' : '<pre class="json mono">'+ escapeHtml(JSON.stringify(hit.data)).slice(0,200) +'</pre>'}</td>
       <td class="px-3 py-2 text-sm">
         <button class="bg-blue-600 text-white px-2 py-1 rounded viewBtn">View</button>
         <button class="bg-yellow-500 text-white px-2 py-1 rounded editBtn">Edit</button>
         <button class="bg-red-600 text-white px-2 py-1 rounded delBtn">Delete</button>
       </td>
     `;
+    // attach events
     tr.querySelector('.viewBtn').addEventListener('click', ()=> openEditor(hit.path, hit.data, false));
     tr.querySelector('.editBtn').addEventListener('click', ()=> openEditor(hit.path, hit.data, true));
     tr.querySelector('.delBtn').addEventListener('click', ()=> doDelete(hit.path));
@@ -291,9 +256,14 @@ function renderResults(){
 
 /* ---------- utility ---------- */
 function escapeHtml(s){ return (s+'').replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;'); }
-function debounce(fn, ms=350){ let t; return (...a)=>{ clearTimeout(t); t = setTimeout(()=> fn(...a), ms); }; }
+
+function debounce(fn, ms=350){
+  let t;
+  return (...a)=>{ clearTimeout(t); t = setTimeout(()=> fn(...a), ms); };
+}
 
 /* ========== search helpers ========== */
+
 // Fetch a node by exact path
 async function fetchByPath(path){
   try{
@@ -303,25 +273,20 @@ async function fetchByPath(path){
   }catch(e){ console.error(e); return null; }
 }
 
-// Fetch batch under a base (used for incremental prefetch)
-async function fetchBatch(base='/movies', limit=500, startAt=null){
-  try{
-    let ref = db.ref(base).orderByKey();
-    if(startAt) ref = ref.startAt(startAt);
-    // fetch one extra to allow safe pagination when startAt provided
-    ref = ref.limitToFirst(limit + (startAt?1:0));
-    const snap = await ref.get();
-    if(!snap.exists()) return [];
-    const val = snap.val();
-    const keys = Object.keys(val || {});
-    // if startAt provided and keys[0] === startAt, drop it
-    if(startAt && keys.length && keys[0] === startAt) keys.shift();
-    const out = keys.map(k=>({ path: base.replace(/\/$/,'') + '/' + k, key: k, data: val[k] }));
-    return out;
-  }catch(e){ console.error('fetchBatch err', e); return []; }
+// Fetch all under a base path (careful on very large)
+async function fetchAllUnder(base='/movies'){
+  const snap = await db.ref(base).get();
+  if(!snap.exists()) return [];
+  const val = snap.val();
+  const out = [];
+  // if object with keys
+  for(const k of Object.keys(val)){
+    out.push({ path: base.replace(/\/$/,'') + '/' + k, key: k, data: val[k] });
+  }
+  return out;
 }
 
-// client-side full-text filter (legacy fallback)
+// client-side full-text filter (case-insensitive)
 function filterHits(hits, q){
   if(!q) return hits;
   const qq = q.toLowerCase();
@@ -332,87 +297,24 @@ function filterHits(hits, q){
       if((d.title||'').toLowerCase().includes(qq)) return true;
       if((d.subtitle||'').toLowerCase().includes(qq)) return true;
       if((d.description||'').toLowerCase().includes(qq)) return true;
+      // links
       if(Array.isArray(d.downloadLinks)){
         for(const l of d.downloadLinks){
           if((l.text||'').toLowerCase().includes(qq)) return true;
           if((l.url||'').toLowerCase().includes(qq)) return true;
         }
       }
+      // stringify fallback
       if(JSON.stringify(d).toLowerCase().includes(qq)) return true;
       return false;
     }catch(e){ return false; }
   });
 }
 
-/* ========== Fuse helpers ========== */
-function prepareFuse(hits){
-  try{
-    const options = {
-      keys: [
-        {name: 'key', weight: 0.6},
-        {name: 'data.title', weight: 0.9},
-        {name: 'data.subtitle', weight: 0.7},
-        {name: 'data.description', weight: 0.5},
-        {name: 'data.downloadLinks.text', weight: 0.4},
-        {name: 'data.downloadLinks.url', weight: 0.4}
-      ],
-      threshold: 0.35,
-      includeScore: true,
-      useExtendedSearch: true
-    };
-    fuse = new Fuse(hits, options);
-    fuseReady = true;
-    console.info('Fuse ready for', hits.length, 'items');
-  }catch(e){ console.warn('prepareFuse error', e); fuseReady = false; }
-}
-
-/* background prefetch that fills allHits in batches and updates fuse + cache */
-async function startBackgroundPrefetch(base='/movies', fromCache=false){
-  if(prefetching) return;
-  prefetching = true;
-  totalLoaded = allHits.length || 0;
-  let lastKey = null;
-  if(fromCache && totalLoaded){
-    lastKey = allHits[allHits.length-1] ? allHits[allHits.length-1].key : null;
-  }
-  let batchCount = 0;
-  try{
-    while(true){
-      const batch = await fetchBatch(base, BATCH_SIZE, lastKey);
-      if(!batch.length) break;
-      allHits.push(...batch);
-      totalLoaded = allHits.length;
-      lastKey = batch[batch.length - 1].key;
-      batchCount++;
-
-      // rebuild fuse periodically to keep search responsive while loading
-      if(batchCount % 2 === 0 || batch.length < BATCH_SIZE){
-        prepareFuse(allHits);
-      }
-
-      // update summary to show progress
-      summary.textContent = `Prefetching... loaded ${totalLoaded} items`;
-      // small yield to keep UI responsive
-      await new Promise(r => setTimeout(r, 50));
-
-      // safety: stop if user loaded too many
-      if(totalLoaded > 150000) break; // avoid runaway
-    }
-
-    // final fuse build
-    prepareFuse(allHits);
-    // persist to idb
-    if(cacheDB){
-      try{ await cacheDB.put('movies', allHits, CACHE_KEY); console.info('Cached to IDB', allHits.length); }
-      catch(e){ console.warn('cache store failed', e); }
-    }
-    summary.textContent = `Prefetch complete — ${allHits.length} items loaded`;
-  }catch(e){ console.warn('prefetch err', e); summary.textContent = `Prefetch error: ${e.message || e}`; }
-  finally{ prefetching = false; renderResults(); }
-}
-
 /* ========== Main Search Flow ========== */
+
 async function doSearch(){
+  allHits = [];
   page = 0;
   resultsTbody.innerHTML = '';
   suggestionsDiv.innerHTML = '';
@@ -424,53 +326,31 @@ async function doSearch(){
 
   try{
     if(mode === 'path'){
+      // if path like movies/key or key
       const p = q.startsWith('/') ? q.slice(1) : q;
       const maybePaths = [];
       if(p.includes('/')) maybePaths.push(p);
-      else { maybePaths.push('movies/' + p); maybePaths.push(p); }
-      allHits = [];
+      else {
+        maybePaths.push('movies/' + p);
+        maybePaths.push(p);
+      }
+      // try each
       for(const mp of maybePaths){
         const r = await fetchByPath(mp);
         if(r) allHits.push(r);
       }
-    } else if(mode === 'prefix'){
-      // for prefix we can leverage keys if some data loaded, else fetch a reasonably sized batch
+    } else {
+      // for prefix / field / full modes
+      // determine base
       const base = searchAllNodes ? '/' : '/movies';
-      if(fuseReady && q){
-        // when fuse ready, use it to find matches in keys too
-        const res = fuse.search(`^${q}`); // prefix search via extended syntax
-        allHits = res.map(r=>r.item);
-      } else {
-        // fetch a moderate batch and filter
-        const hits = await fetchBatch(base, 500, null);
-        allHits = hits.filter(h => (h.key||'').toLowerCase().startsWith(q.toLowerCase()) || h.path.toLowerCase().includes(q.toLowerCase()));
-        // kick off full prefetch if not started
-        if(!prefetching) startBackgroundPrefetch('/movies', false).catch(()=>{});
-      }
-    } else if(mode === 'field' || mode === 'full'){
-      const base = searchAllNodes ? '/' : '/movies';
-      if(!q){
-        // no query — show current loaded items (pagination)
-        if(allHits.length === 0){
-          // load first batch quickly
-          allHits = await fetchBatch(base, 500, null);
-          // start full background prefetch
-          startBackgroundPrefetch('/movies', false).catch(()=>{});
-        }
-      } else {
-        // if fuse is ready, use it — fastest for large datasets
-        if(fuseReady){
-          const res = fuse.search(q);
-          allHits = res.map(r=>r.item);
-        } else {
-          // fallback: search among what we have loaded
-          if(allHits.length === 0){
-            allHits = await fetchBatch(base, 1000, null);
-            // start background prefetch
-            startBackgroundPrefetch('/movies', false).catch(()=>{});
-          }
-          allHits = filterHits(allHits, q);
-        }
+      // fetch all under base
+      const hits = await fetchAllUnder(base);
+      if(mode === 'prefix'){
+        const qlow = q.toLowerCase();
+        allHits = hits.filter(h => (h.key||'').toLowerCase().startsWith(qlow) || h.path.toLowerCase().includes(qlow));
+      } else if(mode === 'field' || mode === 'full'){
+        if(!q){ allHits = hits; }
+        else allHits = filterHits(hits, q);
       }
     }
 
@@ -485,7 +365,10 @@ async function doSearch(){
     });
 
     renderResults();
-  }catch(e){ console.error(e); summary.textContent = 'Error: ' + (e.message || e); }
+  }catch(e){
+    console.error(e);
+    summary.textContent = 'Error: ' + (e.message || e);
+  }
 }
 
 /* ========== Editor ========== */
@@ -517,6 +400,7 @@ function closeEditor(){ editorModal.style.display = 'none'; editorModal.classLis
 
 function buildFieldForm(obj){
   fieldForm.innerHTML = '';
+  // show some common fields for movie objects to edit quickly
   const fields = ['title','poster','subtitle','description','rating','quality','releasedAt','trending','pinned'];
   fields.forEach(k=>{
     const val = obj[k] !== undefined ? obj[k] : '';
@@ -530,6 +414,7 @@ function buildFieldForm(obj){
     fieldForm.appendChild(wrapper);
   });
 
+  // downloadLinks editor (simple)
   const dl = obj.downloadLinks || [];
   const dlWrap = document.createElement('div');
   dlWrap.innerHTML = '<label class="text-xs font-semibold mt-2">downloadLinks (text / url)</label>';
@@ -542,6 +427,7 @@ function buildFieldForm(obj){
                      <input data-key="dl_url_${idx}" class="border p-1 rounded flex-1" value="${escapeHtml(it.url||'')}">`;
     dlList.appendChild(row);
   });
+  // add button to add new link
   const addBtn = document.createElement('button');
   addBtn.className = 'bg-gray-200 px-2 py-1 rounded text-sm mt-2';
   addBtn.textContent = 'Add Link';
@@ -562,13 +448,16 @@ function buildFieldForm(obj){
 /* apply changes from fieldForm into rawJson and save */
 btnApply.addEventListener('click', async ()=>{
   try{
+    // merge field form into object
     const obj = JSON.parse(rawJson.value);
+    // fields
     fieldForm.querySelectorAll('[data-key]').forEach(el=>{
       const key = el.getAttribute('data-key');
-      if(key.startsWith('dl_text_') || key.startsWith('dl_url_')) return;
+      if(key.startsWith('dl_text_') || key.startsWith('dl_url_')) return; // handle later
       if(el.type === 'checkbox') obj[key] = el.checked;
       else obj[key] = el.value;
     });
+    // download links rebuild
     const dlTextEls = Array.from(fieldForm.querySelectorAll('[data-key^="dl_text_"]'));
     const dl = [];
     for(const tEl of dlTextEls){
@@ -579,16 +468,21 @@ btnApply.addEventListener('click', async ()=>{
       if(url) dl.push({ text, url });
     }
     if(dl.length) obj.downloadLinks = dl;
+
+    // try parse JSON to ensure valid
     const jsonStr = JSON.stringify(obj, null, 2);
     rawJson.value = jsonStr;
+
+    // write to firebase
     await db.ref(currentEdit.path).set(obj);
     editorMsg.textContent = 'Saved ✓';
+    // update local hits if present
     const hitIdx = allHits.findIndex(h => h.path === currentEdit.path);
     if(hitIdx !== -1) allHits[hitIdx].data = obj;
-    // update fuse if ready
-    if(fuseReady){ prepareFuse(allHits); }
     renderResults();
-  }catch(e){ editorMsg.textContent = 'Error: ' + (e.message || e); }
+  }catch(e){
+    editorMsg.textContent = 'Error: ' + (e.message || e);
+  }
 });
 
 btnClose.addEventListener('click', closeEditor);
@@ -597,10 +491,12 @@ async function doDelete(path){
   if(!confirm('Delete node at ' + path + ' ?')) return;
   try{
     await db.ref(path).remove();
+    // remove from allHits
     allHits = allHits.filter(h => h.path !== path);
-    if(fuseReady) prepareFuse(allHits);
     renderResults();
-  }catch(e){ alert('Delete error: ' + (e.message || e)); }
+  }catch(e){
+    alert('Delete error: ' + (e.message || e));
+  }
 }
 
 btnDelete.addEventListener('click', async ()=>{
@@ -608,49 +504,46 @@ btnDelete.addEventListener('click', async ()=>{
   try{
     await db.ref(currentEdit.path).remove();
     editorMsg.textContent = 'Deleted ✓';
+    // remove local
     allHits = allHits.filter(h => h.path !== currentEdit.path);
-    if(fuseReady) prepareFuse(allHits);
     renderResults();
     closeEditor();
-  }catch(e){ editorMsg.textContent = 'Delete error: ' + (e.message || e); }
+  }catch(e){
+    editorMsg.textContent = 'Delete error: ' + (e.message || e);
+  }
 });
 
 /* pagination */
-prevPage.addEventListener('click', ()=> { if(page > 0){ page--; renderResults(); } });
-nextPage.addEventListener('click', ()=> { const perPage = parseInt(perPageSel.value || 10); if((page+1) * perPage < allHits.length){ page++; renderResults(); } });
+prevPage.addEventListener('click', ()=> {
+  if(page > 0){ page--; renderResults(); }
+});
+nextPage.addEventListener('click', ()=> {
+  const perPage = parseInt(perPageSel.value || 10);
+  if((page+1) * perPage < allHits.length){ page++; renderResults(); }
+});
 
 /* bind search */
 btnSearch.addEventListener('click', doSearch);
-btnClear.addEventListener('click', ()=>{ qInput.value = ''; modeSelect.value = 'field'; resultsTbody.innerHTML = ''; allHits = []; summary.textContent = 'Cleared'; });
+btnClear.addEventListener('click', ()=>{
+  qInput.value = ''; modeSelect.value = 'field'; resultsTbody.innerHTML = ''; allHits = []; summary.textContent = 'Cleared';
+});
 
 /* live suggestions while typing (debounced) */
 qInput.addEventListener('input', debounce(async ()=>{
   const q = qInput.value.trim();
   if(!q) { suggestionsDiv.innerHTML = ''; return; }
+  // lightweight search: fetch first 200 under /movies and filter client-side
   try{
-    if(fuseReady){
-      const res = fuse.search(q).slice(0,6).map(r=>r.item);
-      suggestionsDiv.innerHTML = '';
-      res.forEach(h=>{
-        const b = document.createElement('button');
-        b.className = 'px-3 py-1 bg-gray-100 rounded text-sm';
-        b.textContent = h.key + ' → ' + (h.data && h.data.title ? h.data.title : '');
-        b.addEventListener('click', ()=> { qInput.value = h.key; modeSelect.value = 'path'; doSearch(); });
-        suggestionsDiv.appendChild(b);
-      });
-    } else {
-      // lightweight: fetch small batch and filter client-side
-      const hits = await fetchBatch('/movies', 500, null);
-      const filtered = hits.filter(h => (h.key||'').toLowerCase().includes(q.toLowerCase()) || JSON.stringify(h.data).toLowerCase().includes(q.toLowerCase()));
-      suggestionsDiv.innerHTML = '';
-      filtered.slice(0,6).forEach(h=>{
-        const b = document.createElement('button');
-        b.className = 'px-3 py-1 bg-gray-100 rounded text-sm';
-        b.textContent = h.key + ' → ' + (h.data && h.data.title ? h.data.title : '');
-        b.addEventListener('click', ()=> { qInput.value = h.key; modeSelect.value = 'path'; doSearch(); });
-        suggestionsDiv.appendChild(b);
-      });
-    }
+    const hits = await fetchAllUnder('/movies');
+    const filtered = hits.filter(h => (h.key||'').toLowerCase().includes(q.toLowerCase()) || JSON.stringify(h.data).toLowerCase().includes(q.toLowerCase()));
+    suggestionsDiv.innerHTML = '';
+    filtered.slice(0,6).forEach(h=>{
+      const b = document.createElement('button');
+      b.className = 'px-3 py-1 bg-gray-100 rounded text-sm';
+      b.textContent = h.key + ' → ' + (h.data && h.data.title ? h.data.title : '');
+      b.addEventListener('click', ()=> { qInput.value = h.key; modeSelect.value = 'path'; doSearch(); });
+      suggestionsDiv.appendChild(b);
+    });
   }catch(e){ /* ignore */ }
 }, 300));
 
