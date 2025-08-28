@@ -16,36 +16,38 @@
   <style>
     .mono{ font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, "Roboto Mono", monospace }
     pre.json{ white-space: pre-wrap; word-break: break-word; background:#f3f4f6; padding:8px; border-radius:6px }
-    /* small responsive tweak for modal on small screens */
-    @media (max-width: 640px){
-      #editorModal > div { max-width: 95%; padding: 1rem; }
-    }
   </style>
 </head>
-<body class="bg-gray-100 min-h-screen p-6">
-  <div class="max-w-6xl mx-auto">
-    <div class="flex items-center justify-between mb-6">
-      <h1 class="text-2xl font-bold">Advanced Firebase Admin Panel</h1>
-      <div id="authArea" class="flex items-center gap-3">
+<body class="bg-gray-100 min-h-screen">
+
+  <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+
+    <!-- Header / Auth -->
+    <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-6 gap-4 sm:gap-0">
+      <h1 class="text-xl sm:text-2xl font-bold">Advanced Firebase Admin Panel</h1>
+      <div id="authArea" class="flex items-center gap-3 w-full sm:w-auto">
         <div id="userInfo" class="hidden items-center gap-3">
           <span id="uidLabel" class="mono text-sm"></span>
           <button id="btnLogout" class="bg-gray-700 text-white px-3 py-1 rounded">Logout</button>
         </div>
-        <div id="loginBox" class="bg-white p-3 rounded shadow w-96">
+        <div id="loginBox" class="bg-white p-3 rounded shadow w-full sm:w-96">
           <input id="email" class="border p-2 rounded w-full mb-2" placeholder="Admin email">
           <input id="password" type="password" class="border p-2 rounded w-full mb-2" placeholder="Password">
-          <div class="flex gap-2">
-            <button id="btnLogin" class="bg-blue-600 text-white px-4 py-2 rounded flex-1">Login</button>
-            <button id="btnDemo" title="Quick demo (if you want to auto-fill search box)" class="bg-gray-200 px-3 py-2 rounded">Demo</button>
+          <div class="flex flex-col sm:flex-row gap-2">
+            <button id="btnLogin" class="bg-blue-600 text-white px-4 py-2 rounded flex-1 w-full sm:w-auto">Login</button>
+            <button id="btnDemo" title="Quick demo" class="bg-gray-200 px-3 py-2 rounded w-full sm:w-auto">Demo</button>
           </div>
           <p id="loginErr" class="text-red-600 text-sm mt-2"></p>
         </div>
       </div>
     </div>
 
-    <!-- Controls -->
+    <!-- Panel -->
     <div id="panel" class="hidden bg-white p-4 rounded shadow">
-      <div class="grid md:grid-cols-3 gap-3 mb-3">
+
+      <!-- Controls Grid -->
+      <div class="grid sm:grid-cols-2 md:grid-cols-3 gap-3 mb-3">
+
         <div>
           <label class="block text-sm font-semibold mb-1">Search Mode</label>
           <select id="mode" class="border p-2 rounded w-full">
@@ -64,14 +66,15 @@
 
         <div>
           <label class="block text-sm font-semibold mb-1">Options</label>
-          <div class="flex gap-2">
+          <div class="flex flex-col gap-2">
             <label class="flex items-center gap-2"><input type="checkbox" id="searchAllNodes"> Search entire DB (not just /movies)</label>
-          </div>
-          <div class="flex gap-2 mt-2">
-            <button id="btnSearch" class="bg-green-600 text-white px-4 py-2 rounded">Search</button>
-            <button id="btnClear" class="bg-gray-200 px-4 py-2 rounded">Clear</button>
+            <div class="flex flex-col sm:flex-row gap-2 mt-2">
+              <button id="btnSearch" class="bg-green-600 text-white px-4 py-2 rounded flex-1 w-full sm:w-auto">Search</button>
+              <button id="btnClear" class="bg-gray-200 px-4 py-2 rounded flex-1 w-full sm:w-auto">Clear</button>
+            </div>
           </div>
         </div>
+
       </div>
 
       <!-- Live suggestions -->
@@ -80,7 +83,7 @@
       </div>
 
       <!-- Results summary -->
-      <div class="mb-3 flex items-center justify-between">
+      <div class="mb-3 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 sm:gap-0">
         <div class="text-sm text-gray-600" id="summary">No search yet</div>
         <div class="text-sm text-gray-600">Results per page:
           <select id="perPage" class="border p-1 rounded">
@@ -89,7 +92,7 @@
         </div>
       </div>
 
-      <!-- Results table -->
+      <!-- Results Table -->
       <div id="resultsWrapper" class="overflow-x-auto bg-white rounded">
         <table class="min-w-full divide-y">
           <thead class="bg-gray-50">
@@ -105,25 +108,25 @@
       </div>
 
       <!-- Pagination -->
-      <div class="mt-3 flex items-center justify-between">
+      <div class="mt-3 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 sm:gap-0">
         <div>
           <button id="prevPage" class="px-3 py-1 border rounded">Prev</button>
-          <button id="nextPage" class="px-3 py-1 border rounded ml-2">Next</button>
+          <button id="nextPage" class="px-3 py-1 border rounded ml-0 sm:ml-2">Next</button>
         </div>
         <div id="pageInfo" class="text-sm text-gray-600"></div>
       </div>
 
-      <!-- Editor modal -->
+      <!-- Editor Modal -->
       <div id="editorModal" class="fixed inset-0 hidden items-center justify-center bg-black/50 p-4">
-        <div class="bg-white rounded max-w-3xl w-full p-4">
-          <div class="flex justify-between items-center mb-2">
+        <div class="bg-white rounded max-w-3xl w-full sm:w-11/12 p-4">
+          <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-2 gap-2 sm:gap-0">
             <h3 class="font-semibold">Edit Node: <span id="editPath" class="mono text-sm"></span></h3>
             <div class="flex gap-2">
               <button id="btnApply" class="bg-green-600 text-white px-4 py-1 rounded">Save</button>
               <button id="btnClose" class="bg-gray-200 px-3 py-1 rounded">Close</button>
             </div>
           </div>
-          <div class="grid md:grid-cols-2 gap-3">
+          <div class="grid sm:grid-cols-2 gap-3">
             <div>
               <label class="text-sm font-semibold">Field Editor (form)</label>
               <div id="fieldForm" class="space-y-2 mt-2"></div>
@@ -133,7 +136,7 @@
               <textarea id="rawJson" class="w-full border p-2 rounded h-64 mono"></textarea>
             </div>
           </div>
-          <div class="mt-3 flex gap-2">
+          <div class="mt-3 flex flex-col sm:flex-row gap-2">
             <button id="btnDelete" class="bg-red-600 text-white px-4 py-1 rounded">Delete Node</button>
             <div id="editorMsg" class="text-sm text-gray-600"></div>
           </div>
