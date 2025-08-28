@@ -1,0 +1,400 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Advanced Firebase Admin — 50k+ Offline</title>
+
+<!-- Firebase compat -->
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+
+<!-- Tailwind -->
+<link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+
+<style>
+  body{font-family:sans-serif;background:#f3f4f6;}
+  .mono{ font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, "Roboto Mono", monospace; }
+  pre.json{ white-space: pre-wrap; word-break: break-word; background:#fff; padding:6px; border-radius:6px; }
+  /* modal scroll fix */
+  #editorModal{overflow-y:auto;}
+</style>
+</head>
+<body class="p-4">
+
+<div class="max-w-6xl mx-auto">
+
+  <!-- Auth -->
+  <div id="authArea" class="mb-4">
+    <div id="userInfo" class="hidden flex items-center gap-3">
+      <span id="uidLabel" class="mono text-sm"></span>
+      <button id="btnLogout" class="bg-gray-700 text-white px-3 py-1 rounded">Logout</button>
+    </div>
+    <div id="loginBox" class="bg-white p-4 rounded shadow w-full md:w-96">
+      <input id="email" class="border p-2 rounded w-full mb-2" placeholder="Admin email">
+      <input id="password" type="password" class="border p-2 rounded w-full mb-2" placeholder="Password">
+      <div class="flex gap-2">
+        <button id="btnLogin" class="bg-blue-600 text-white px-4 py-2 rounded flex-1">Login</button>
+        <button id="btnDemo" class="bg-gray-200 px-3 py-2 rounded">Demo</button>
+      </div>
+      <p id="loginErr" class="text-red-600 text-sm mt-2"></p>
+    </div>
+  </div>
+
+  <!-- Panel -->
+  <div id="panel" class="hidden bg-white p-4 rounded shadow">
+
+    <!-- Search -->
+    <div class="grid md:grid-cols-3 gap-3 mb-3">
+      <div>
+        <label class="block text-sm font-semibold mb-1">Search Mode</label>
+        <select id="mode" class="border p-2 rounded w-full">
+          <option value="path">Path / exact key</option>
+          <option value="prefix">Key prefix</option>
+          <option value="field">Field search</option>
+          <option value="full">Full-text</option>
+        </select>
+      </div>
+      <div>
+        <label class="block text-sm font-semibold mb-1">Query</label>
+        <input id="q" class="border p-2 rounded w-full" placeholder="Type keyword">
+      </div>
+      <div>
+        <label class="block text-sm font-semibold mb-1">Options</label>
+        <div class="flex items-center gap-2">
+          <input type="checkbox" id="searchAllNodes"><span class="text-sm">Search entire DB</span>
+        </div>
+        <div class="flex gap-2 mt-2">
+          <button id="btnSearch" class="bg-green-600 text-white px-4 py-2 rounded">Search</button>
+          <button id="btnClear" class="bg-gray-200 px-4 py-2 rounded">Clear</button>
+        </div>
+      </div>
+    </div>
+
+    <div id="suggestions" class="flex gap-2 flex-wrap mb-3"></div>
+
+    <div class="mb-3 flex items-center justify-between">
+      <div id="summary" class="text-sm text-gray-600">No search yet</div>
+      <div class="text-sm text-gray-600">Results per page:
+        <select id="perPage" class="border p-1 rounded">
+          <option>10</option><option>25</option><option>50</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- Table -->
+    <div id="resultsWrapper" class="overflow-x-auto bg-white rounded">
+      <table class="min-w-full divide-y">
+        <thead class="bg-gray-50">
+          <tr>
+            <th class="px-3 py-2 text-left text-xs text-gray-500">#</th>
+            <th class="px-3 py-2 text-left text-xs text-gray-500">Path / Key</th>
+            <th class="px-3 py-2 text-left text-xs text-gray-500">Title / preview</th>
+            <th class="px-3 py-2 text-left text-xs text-gray-500">Actions</th>
+          </tr>
+        </thead>
+        <tbody id="resultsTbody" class="bg-white divide-y"></tbody>
+      </table>
+    </div>
+
+    <!-- Pagination -->
+    <div class="mt-3 flex items-center justify-between">
+      <div>
+        <button id="prevPage" class="px-3 py-1 border rounded">Prev</button>
+        <button id="nextPage" class="px-3 py-1 border rounded ml-2">Next</button>
+      </div>
+      <div id="pageInfo" class="text-sm text-gray-600"></div>
+    </div>
+
+  </div>
+
+</div>
+
+<!-- Editor Modal -->
+<div id="editorModal" class="fixed inset-0 hidden items-center justify-center bg-black/50 p-4">
+  <div class="bg-white rounded max-w-3xl w-full p-4">
+    <div class="flex justify-between items-center mb-2">
+      <h3 class="font-semibold">Edit Node: <span id="editPath" class="mono text-sm"></span></h3>
+      <div class="flex gap-2">
+        <button id="btnApply" class="bg-green-600 text-white px-4 py-1 rounded">Save</button>
+        <button id="btnClose" class="bg-gray-200 px-3 py-1 rounded">Close</button>
+      </div>
+    </div>
+    <div class="grid md:grid-cols-2 gap-3">
+      <div>
+        <label class="text-sm font-semibold">Field Editor (form)</label>
+        <div id="fieldForm" class="space-y-2 mt-2"></div>
+      </div>
+      <div>
+        <label class="text-sm font-semibold">Raw JSON (editable)</label>
+        <textarea id="rawJson" class="w-full border p-2 rounded h-64 mono"></textarea>
+      </div>
+    </div>
+    <div class="mt-3 flex gap-2">
+      <button id="btnDelete" class="bg-red-600 text-white px-4 py-1 rounded">Delete Node</button>
+      <div id="editorMsg" class="text-sm text-gray-600"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ================= CONFIG ================= */
+const firebaseConfig = {
+  apiKey: "AIzaSyDpiN0OV1aD709Q987PymfOOp_lcW6Hid8",
+  authDomain: "my-book-project-c5a17.firebaseapp.com",
+  databaseURL: "https://my-book-project-c5a17-default-rtdb.asia-southeast1.firebasedatabase.app",
+  projectId: "my-book-project-c5a17",
+  storageBucket: "my-book-project-c5a17.appspot.com",
+  messagingSenderId: "422603504433",
+  appId: "1:422603504433:web:e6870a7d2c57c045eb0e10",
+};
+const ADMIN_UID = "PDK5rMhfUAc2mFA7VwKh3EtItov1";
+
+firebase.initializeApp(firebaseConfig);
+const db = firebase.database();
+const auth = firebase.auth();
+
+/* ================ IndexedDB ================= */
+let dbIDB = null;
+function openIndexedDB(){
+  return new Promise((res,rej)=>{
+    const req = indexedDB.open('firebaseCacheDB',1);
+    req.onerror = ()=>rej('IndexedDB failed');
+    req.onsuccess = ()=>{ dbIDB=req.result; res(dbIDB); };
+    req.onupgradeneeded = e=>{
+      dbIDB = e.target.result;
+      if(!dbIDB.objectStoreNames.contains('nodes')){
+        dbIDB.createObjectStore('nodes',{keyPath:'path'});
+      }
+    };
+  });
+}
+function saveToIDB(node){
+  if(!dbIDB) return;
+  const tx = dbIDB.transaction('nodes','readwrite');
+  tx.objectStore('nodes').put(node);
+}
+function getAllFromIDB(){
+  return new Promise((res,rej)=>{
+    if(!dbIDB) return res([]);
+    const tx = dbIDB.transaction('nodes','readonly');
+    const store = tx.objectStore('nodes');
+    const req = store.getAll();
+    req.onsuccess = ()=>res(req.result);
+    req.onerror = ()=>rej('IDB getAll failed');
+  });
+}
+function clearIDB(){
+  if(!dbIDB) return;
+  const tx = dbIDB.transaction('nodes','readwrite');
+  tx.objectStore('nodes').clear();
+}
+
+/* ================ AUTH ================= */
+const loginBox = document.getElementById('loginBox');
+const userInfo = document.getElementById('userInfo');
+const uidLabel = document.getElementById('uidLabel');
+const btnLogin = document.getElementById('btnLogin');
+const btnLogout = document.getElementById('btnLogout');
+const loginErr = document.getElementById('loginErr');
+const panel = document.getElementById('panel');
+
+auth.onAuthStateChanged(async user=>{
+  if(user && user.uid === ADMIN_UID){
+    loginBox.classList.add('hidden');
+    userInfo.classList.remove('hidden');
+    uidLabel.textContent = user.uid;
+    panel.classList.remove('hidden');
+    loginErr.textContent = '';
+    await openIndexedDB();
+  } else {
+    loginBox.classList.remove('hidden');
+    userInfo.classList.add('hidden');
+    uidLabel.textContent = '';
+    panel.classList.add('hidden');
+  }
+});
+
+btnLogin.addEventListener('click', async ()=>{
+  loginErr.textContent='';
+  const email=document.getElementById('email').value.trim();
+  const password=document.getElementById('password').value.trim();
+  if(!email||!password){ loginErr.textContent='Enter credentials'; return; }
+  try{ await auth.signInWithEmailAndPassword(email,password); }catch(e){ loginErr.textContent=e.message; }
+});
+btnLogout.addEventListener('click', ()=> auth.signOut());
+document.getElementById('btnDemo').addEventListener('click', ()=> { document.getElementById('q').value='Jawan'; });
+
+/* ================= SEARCH ================= */
+const qInput = document.getElementById('q');
+const modeSelect = document.getElementById('mode');
+const btnSearch = document.getElementById('btnSearch');
+const btnClear = document.getElementById('btnClear');
+const suggestionsDiv = document.getElementById('suggestions');
+const resultsTbody = document.getElementById('resultsTbody');
+const summary = document.getElementById('summary');
+const perPageSel = document.getElementById('perPage');
+const prevPage = document.getElementById('prevPage');
+const nextPage = document.getElementById('nextPage');
+const pageInfo = document.getElementById('pageInfo');
+
+/* state */
+let allHits = [];
+let page=0;
+let currentQuery='';
+
+/* ================ UTILS ================= */
+function escapeHtml(s){ return (s+'').replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;'); }
+function debounce(fn,ms=350){ let t; return (...a)=>{ clearTimeout(t); t=setTimeout(()=>fn(...a),ms); }; }
+
+/* ================ FETCH HELPERS =============== */
+async function fetchAllUnder(base='/movies'){
+  // check IDB first
+  let cached = await getAllFromIDB();
+  if(cached.length>0) return cached;
+
+  const snap = await db.ref(base).get();
+  if(!snap.exists()) return [];
+  const val = snap.val();
+  const out=[];
+  for(const k of Object.keys(val)){
+    const node={ path: base.replace(/\/$/,'')+'/'+k, key:k, data: val[k] };
+    out.push(node);
+    saveToIDB(node);
+  }
+  return out;
+}
+
+function filterHits(hits,q){
+  if(!q) return hits;
+  const qq=q.toLowerCase();
+  return hits.filter(h=>{
+    try{
+      const d=h.data||{};
+      if((h.key||'').toLowerCase().includes(qq)) return true;
+      if((d.title||'').toLowerCase().includes(qq)) return true;
+      if((d.subtitle||'').toLowerCase().includes(qq)) return true;
+      if((d.description||'').toLowerCase().includes(qq)) return true;
+      if(Array.isArray(d.downloadLinks)){
+        for(const l of d.downloadLinks){
+          if((l.text||'').toLowerCase().includes(qq)) return true;
+          if((l.url||'').toLowerCase().includes(qq)) return true;
+        }
+      }
+      if(JSON.stringify(d).toLowerCase().includes(qq)) return true;
+      return false;
+    }catch(e){ return false; }
+  });
+}
+
+/* ================ RENDER ================= */
+function setSummary(){
+  const perPage=parseInt(perPageSel.value||10);
+  summary.textContent=`${allHits.length} result(s). Showing page ${page+1}`;
+  pageInfo.textContent=`Page ${page+1} / ${Math.max(1,Math.ceil(allHits.length/perPage))}`;
+}
+
+function renderResults(){
+  resultsTbody.innerHTML='';
+  const perPage=parseInt(perPageSel.value||10);
+  const start=page*perPage;
+  const end=start+perPage;
+  allHits.slice(start,end).forEach((hit,i)=>{
+    const tr=document.createElement('tr');
+    tr.innerHTML=`
+      <td class="px-3 py-2 text-sm">${start+i+1}</td>
+      <td class="px-3 py-2 mono text-sm">${hit.path}</td>
+      <td class="px-3 py-2 text-sm">${(hit.data&&hit.data.title)?'<strong>'+escapeHtml(hit.data.title)+'</strong><div class="text-xs text-gray-500">'+escapeHtml((hit.data.subtitle||'').toString().slice(0,80))+'</div>':'<pre class="json mono">'+escapeHtml(JSON.stringify(hit.data)).slice(0,100)+'...</pre>'}</td>
+      <td class="px-3 py-2 text-sm flex gap-2">
+        <button class="px-2 py-1 bg-blue-600 text-white rounded btnEdit" data-path="${hit.path}">Edit</button>
+        <button class="px-2 py-1 bg-red-600 text-white rounded btnDelete" data-path="${hit.path}">Delete</button>
+      </td>
+    `;
+    resultsTbody.appendChild(tr);
+  });
+  setSummary();
+}
+
+/* ================= EVENTS ================= */
+btnSearch.addEventListener('click', async ()=>{
+  const q=qInput.value.trim();
+  if(!q){ allHits=[]; renderResults(); return; }
+  currentQuery=q;
+  let hits = await fetchAllUnder();
+  hits = filterHits(hits,q);
+  allHits=hits;
+  page=0;
+  renderResults();
+});
+
+btnClear.addEventListener('click', ()=>{
+  qInput.value='';
+  allHits=[];
+  page=0;
+  renderResults();
+});
+
+prevPage.addEventListener('click', ()=>{ if(page>0){ page--; renderResults(); } });
+nextPage.addEventListener('click', ()=>{
+  const maxPage = Math.floor(allHits.length/parseInt(perPageSel.value||10));
+  if(page<maxPage){ page++; renderResults(); }
+});
+
+perPageSel.addEventListener('change', ()=>{ page=0; renderResults(); });
+
+/* ================= EDIT / DELETE ================= */
+const editorModal = document.getElementById('editorModal');
+const editPathLabel = document.getElementById('editPath');
+const rawJsonTA = document.getElementById('rawJson');
+let editNode=null;
+
+document.addEventListener('click', e=>{
+  if(e.target.classList.contains('btnEdit')){
+    const path=e.target.dataset.path;
+    editNode = allHits.find(h=>h.path===path);
+    if(!editNode) return;
+    editPathLabel.textContent=path;
+    rawJsonTA.value = JSON.stringify(editNode.data,null,2);
+    editorModal.classList.remove('hidden');
+  } else if(e.target.classList.contains('btnDelete')){
+    const path=e.target.dataset.path;
+    if(confirm('Confirm delete '+path+'?')){
+      db.ref(path).remove();
+      clearIDB();
+      allHits = allHits.filter(h=>h.path!==path);
+      renderResults();
+    }
+  }
+});
+
+document.getElementById('btnClose').addEventListener('click', ()=> editorModal.classList.add('hidden'));
+document.getElementById('btnApply').addEventListener('click', ()=>{
+  if(!editNode) return;
+  try{
+    const newData = JSON.parse(rawJsonTA.value);
+    db.ref(editNode.path).set(newData);
+    editNode.data = newData;
+    saveToIDB(editNode);
+    renderResults();
+    editorModal.classList.add('hidden');
+  }catch(e){ alert('Invalid JSON'); }
+});
+
+document.getElementById('btnDelete').addEventListener('click', ()=>{
+  if(!editNode) return;
+  if(confirm('Confirm delete '+editNode.path+'?')){
+    db.ref(editNode.path).remove();
+    clearIDB();
+    allHits = allHits.filter(h=>h.path!==editNode.path);
+    renderResults();
+    editorModal.classList.add('hidden');
+  }
+});
+
+/* ================= INIT ================= */
+(async()=>{ await openIndexedDB(); })();
+
+</script>
+</body>
+</html>
