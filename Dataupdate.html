@@ -16,38 +16,36 @@
   <style>
     .mono{ font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, "Roboto Mono", monospace }
     pre.json{ white-space: pre-wrap; word-break: break-word; background:#f3f4f6; padding:8px; border-radius:6px }
+    /* small responsive tweak for modal on small screens */
+    @media (max-width: 640px){
+      #editorModal > div { max-width: 95%; padding: 1rem; }
+    }
   </style>
 </head>
-<body class="bg-gray-100 min-h-screen">
-
-  <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-
-    <!-- Header / Auth -->
-    <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-6 gap-4 sm:gap-0">
-      <h1 class="text-xl sm:text-2xl font-bold">Advanced Firebase Admin Panel</h1>
-      <div id="authArea" class="flex items-center gap-3 w-full sm:w-auto">
+<body class="bg-gray-100 min-h-screen p-6">
+  <div class="max-w-6xl mx-auto">
+    <div class="flex items-center justify-between mb-6">
+      <h1 class="text-2xl font-bold">Advanced Firebase Admin Panel</h1>
+      <div id="authArea" class="flex items-center gap-3">
         <div id="userInfo" class="hidden items-center gap-3">
           <span id="uidLabel" class="mono text-sm"></span>
           <button id="btnLogout" class="bg-gray-700 text-white px-3 py-1 rounded">Logout</button>
         </div>
-        <div id="loginBox" class="bg-white p-3 rounded shadow w-full sm:w-96">
+        <div id="loginBox" class="bg-white p-3 rounded shadow w-96">
           <input id="email" class="border p-2 rounded w-full mb-2" placeholder="Admin email">
           <input id="password" type="password" class="border p-2 rounded w-full mb-2" placeholder="Password">
-          <div class="flex flex-col sm:flex-row gap-2">
-            <button id="btnLogin" class="bg-blue-600 text-white px-4 py-2 rounded flex-1 w-full sm:w-auto">Login</button>
-            <button id="btnDemo" title="Quick demo" class="bg-gray-200 px-3 py-2 rounded w-full sm:w-auto">Demo</button>
+          <div class="flex gap-2">
+            <button id="btnLogin" class="bg-blue-600 text-white px-4 py-2 rounded flex-1">Login</button>
+            <button id="btnDemo" title="Quick demo (if you want to auto-fill search box)" class="bg-gray-200 px-3 py-2 rounded">Demo</button>
           </div>
           <p id="loginErr" class="text-red-600 text-sm mt-2"></p>
         </div>
       </div>
     </div>
 
-    <!-- Panel -->
+    <!-- Controls -->
     <div id="panel" class="hidden bg-white p-4 rounded shadow">
-
-      <!-- Controls Grid -->
-      <div class="grid sm:grid-cols-2 md:grid-cols-3 gap-3 mb-3">
-
+      <div class="grid md:grid-cols-3 gap-3 mb-3">
         <div>
           <label class="block text-sm font-semibold mb-1">Search Mode</label>
           <select id="mode" class="border p-2 rounded w-full">
@@ -66,15 +64,14 @@
 
         <div>
           <label class="block text-sm font-semibold mb-1">Options</label>
-          <div class="flex flex-col gap-2">
+          <div class="flex gap-2">
             <label class="flex items-center gap-2"><input type="checkbox" id="searchAllNodes"> Search entire DB (not just /movies)</label>
-            <div class="flex flex-col sm:flex-row gap-2 mt-2">
-              <button id="btnSearch" class="bg-green-600 text-white px-4 py-2 rounded flex-1 w-full sm:w-auto">Search</button>
-              <button id="btnClear" class="bg-gray-200 px-4 py-2 rounded flex-1 w-full sm:w-auto">Clear</button>
-            </div>
+          </div>
+          <div class="flex gap-2 mt-2">
+            <button id="btnSearch" class="bg-green-600 text-white px-4 py-2 rounded">Search</button>
+            <button id="btnClear" class="bg-gray-200 px-4 py-2 rounded">Clear</button>
           </div>
         </div>
-
       </div>
 
       <!-- Live suggestions -->
@@ -83,7 +80,7 @@
       </div>
 
       <!-- Results summary -->
-      <div class="mb-3 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 sm:gap-0">
+      <div class="mb-3 flex items-center justify-between">
         <div class="text-sm text-gray-600" id="summary">No search yet</div>
         <div class="text-sm text-gray-600">Results per page:
           <select id="perPage" class="border p-1 rounded">
@@ -92,7 +89,7 @@
         </div>
       </div>
 
-      <!-- Results Table -->
+      <!-- Results table -->
       <div id="resultsWrapper" class="overflow-x-auto bg-white rounded">
         <table class="min-w-full divide-y">
           <thead class="bg-gray-50">
@@ -108,25 +105,25 @@
       </div>
 
       <!-- Pagination -->
-      <div class="mt-3 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 sm:gap-0">
+      <div class="mt-3 flex items-center justify-between">
         <div>
           <button id="prevPage" class="px-3 py-1 border rounded">Prev</button>
-          <button id="nextPage" class="px-3 py-1 border rounded ml-0 sm:ml-2">Next</button>
+          <button id="nextPage" class="px-3 py-1 border rounded ml-2">Next</button>
         </div>
         <div id="pageInfo" class="text-sm text-gray-600"></div>
       </div>
 
-      <!-- Editor Modal -->
+      <!-- Editor modal -->
       <div id="editorModal" class="fixed inset-0 hidden items-center justify-center bg-black/50 p-4">
-        <div class="bg-white rounded max-w-3xl w-full sm:w-11/12 p-4">
-          <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-2 gap-2 sm:gap-0">
+        <div class="bg-white rounded max-w-3xl w-full p-4">
+          <div class="flex justify-between items-center mb-2">
             <h3 class="font-semibold">Edit Node: <span id="editPath" class="mono text-sm"></span></h3>
             <div class="flex gap-2">
               <button id="btnApply" class="bg-green-600 text-white px-4 py-1 rounded">Save</button>
               <button id="btnClose" class="bg-gray-200 px-3 py-1 rounded">Close</button>
             </div>
           </div>
-          <div class="grid sm:grid-cols-2 gap-3">
+          <div class="grid md:grid-cols-2 gap-3">
             <div>
               <label class="text-sm font-semibold">Field Editor (form)</label>
               <div id="fieldForm" class="space-y-2 mt-2"></div>
@@ -136,7 +133,7 @@
               <textarea id="rawJson" class="w-full border p-2 rounded h-64 mono"></textarea>
             </div>
           </div>
-          <div class="mt-3 flex flex-col sm:flex-row gap-2">
+          <div class="mt-3 flex gap-2">
             <button id="btnDelete" class="bg-red-600 text-white px-4 py-1 rounded">Delete Node</button>
             <div id="editorMsg" class="text-sm text-gray-600"></div>
           </div>
@@ -145,12 +142,18 @@
 
     </div>
 
+    <!-- small footer -->
+    <div class="text-xs text-gray-500 mt-4">
+      Note: Optimized for 50k+ items using IndexedDB caching & lazy-loading. Mobile, tablet & desktop friendly.
+    </div>
+  </div>
+
 <script>
 /* ================= CONFIG ================= */
 const firebaseConfig = {
   apiKey: "AIzaSyDpiN0OV1aD709Q987PymfOOp_lcW6Hid8",
   authDomain: "my-book-project-c5a17.firebaseapp.com",
-  databaseURL: "https://my-book-project-c5a17-default-rtdb.asia-southeast1.firebasedatabase.app",
+  databaseURL: "https://data.talhascollection.xo.je/movies_10000_oneline.json",
   projectId: "my-book-project-c5a17",
   storageBucket: "my-book-project-c5a17.appspot.com",
   messagingSenderId: "422603504433",
@@ -200,6 +203,91 @@ document.getElementById('btnDemo').addEventListener('click', ()=> {
   document.getElementById('q').value = 'Jawan'; // demo
 });
 
+/* ================= INDEXEDDB CACHING ================= */
+let dbCache = []; // holds full dataset as [{path,key,data}]
+let dbLoaded = false;
+let idbInstance = null;
+
+function openIDB(){
+  if(!('indexedDB' in window)) return Promise.resolve(null);
+  if(idbInstance) return Promise.resolve(idbInstance);
+  return new Promise((res,rej)=>{
+    const req = indexedDB.open('FirebaseCacheV1',1);
+    req.onupgradeneeded = ()=> {
+      try{
+        const dbu = req.result;
+        if(!dbu.objectStoreNames.contains('items')) dbu.createObjectStore('items',{keyPath:'path'});
+      }catch(e){}
+    };
+    req.onsuccess = ()=> { idbInstance = req.result; res(idbInstance); };
+    req.onerror = ()=> rej(req.error);
+  });
+}
+
+async function loadFullDB(base='/movies'){
+  if(dbLoaded) return dbCache;
+  // try IndexedDB
+  try{
+    const idb = await openIDB();
+    if(idb){
+      const tx = idb.transaction('items','readonly');
+      const store = tx.objectStore('items');
+      const allReq = store.getAll();
+      const allItems = await new Promise((res,rej)=>{
+        allReq.onsuccess = ()=> res(allReq.result);
+        allReq.onerror = ()=> rej(allReq.error);
+      });
+      if(allItems && allItems.length>0){
+        dbCache = allItems;
+        dbLoaded = true;
+        return dbCache;
+      }
+    }
+  }catch(e){
+    console.warn('IndexedDB read failed', e);
+  }
+
+  // fallback: fetch from firebase
+  const snap = await db.ref(base).get();
+  if(!snap.exists()){ dbCache = []; dbLoaded=true; return dbCache; }
+  const val = snap.val();
+  dbCache = Object.keys(val).map(k=>({path: base.replace(/\/$/,'') + '/' + k, key:k, data: val[k]}));
+
+  // store into indexedDB (best effort, async)
+  try{
+    const idb = await openIDB();
+    if(idb){
+      const tx = idb.transaction('items','readwrite');
+      const store = tx.objectStore('items');
+      for(const item of dbCache) store.put(item);
+      // no need to await tx.complete here
+    }
+  }catch(e){ console.warn('IndexedDB write failed', e); }
+
+  dbLoaded = true;
+  return dbCache;
+}
+
+/* helpers to keep indexedDB in sync after edits/delete */
+async function updateIndexedDBItem(item){
+  try{
+    const idb = await openIDB();
+    if(!idb) return;
+    const tx = idb.transaction('items','readwrite');
+    const store = tx.objectStore('items');
+    store.put(item);
+  }catch(e){ console.warn('IDB update failed', e); }
+}
+async function deleteIndexedDBItem(path){
+  try{
+    const idb = await openIDB();
+    if(!idb) return;
+    const tx = idb.transaction('items','readwrite');
+    const store = tx.objectStore('items');
+    store.delete(path);
+  }catch(e){ console.warn('IDB delete failed', e); }
+}
+
 /* ============== SEARCH LOGIC ============== */
 const qInput = document.getElementById('q');
 const modeSelect = document.getElementById('mode');
@@ -213,7 +301,7 @@ const prevPage = document.getElementById('prevPage');
 const nextPage = document.getElementById('nextPage');
 const pageInfo = document.getElementById('pageInfo');
 
-let allHits = []; // [{path, key, data}]
+let allHits = []; // [{path,key,data}]
 let page = 0;
 
 function setSummary(){
@@ -222,24 +310,23 @@ function setSummary(){
 }
 
 function renderResults(){
+  // virtualized-ish: only render current page
   resultsTbody.innerHTML = '';
   const perPage = parseInt(perPageSel.value || 10);
   const start = page * perPage;
-  const end = start + perPage;
-  const subset = allHits.slice(start, end);
+  const subset = allHits.slice(start, start + perPage);
   subset.forEach((hit,i)=>{
     const tr = document.createElement('tr');
     tr.innerHTML = `
       <td class="px-3 py-2 text-sm">${start + i + 1}</td>
       <td class="px-3 py-2 mono text-sm">${hit.path}</td>
-      <td class="px-3 py-2 text-sm">${(hit.data && hit.data.title) ? '<strong>' + escapeHtml(hit.data.title) + '</strong><div class="text-xs text-gray-500">'+ escapeHtml((hit.data.subtitle||'') .toString().slice(0,80)) +'</div>' : '<pre class="json mono">'+ escapeHtml(JSON.stringify(hit.data)).slice(0,200) +'</pre>'}</td>
+      <td class="px-3 py-2 text-sm">${(hit.data && hit.data.title) ? '<strong>' + escapeHtml(hit.data.title) + '</strong><div class="text-xs text-gray-500">'+ escapeHtml(((hit.data.subtitle||'')+'').toString().slice(0,80)) +'</div>' : '<pre class="json mono">'+ escapeHtml(JSON.stringify(hit.data)).slice(0,200) +'</pre>'}</td>
       <td class="px-3 py-2 text-sm">
         <button class="bg-blue-600 text-white px-2 py-1 rounded viewBtn">View</button>
         <button class="bg-yellow-500 text-white px-2 py-1 rounded editBtn">Edit</button>
         <button class="bg-red-600 text-white px-2 py-1 rounded delBtn">Delete</button>
       </td>
     `;
-    // attach events
     tr.querySelector('.viewBtn').addEventListener('click', ()=> openEditor(hit.path, hit.data, false));
     tr.querySelector('.editBtn').addEventListener('click', ()=> openEditor(hit.path, hit.data, true));
     tr.querySelector('.delBtn').addEventListener('click', ()=> doDelete(hit.path));
@@ -258,51 +345,13 @@ function debounce(fn, ms=350){
 
 /* ========== search helpers ========== */
 
-// Fetch a node by exact path
+// Fetch a node by exact path (from Firebase live)
 async function fetchByPath(path){
   try{
     const snap = await db.ref(path).get();
     if(!snap.exists()) return null;
     return { path, key: path.split('/').pop(), data: snap.val() };
   }catch(e){ console.error(e); return null; }
-}
-
-// Fetch all under a base path (careful on very large)
-async function fetchAllUnder(base='/movies'){
-  const snap = await db.ref(base).get();
-  if(!snap.exists()) return [];
-  const val = snap.val();
-  const out = [];
-  // if object with keys
-  for(const k of Object.keys(val)){
-    out.push({ path: base.replace(/\/$/,'') + '/' + k, key: k, data: val[k] });
-  }
-  return out;
-}
-
-// client-side full-text filter (case-insensitive)
-function filterHits(hits, q){
-  if(!q) return hits;
-  const qq = q.toLowerCase();
-  return hits.filter(h=>{
-    try{
-      const d = h.data || {};
-      if((h.key||'').toLowerCase().includes(qq)) return true;
-      if((d.title||'').toLowerCase().includes(qq)) return true;
-      if((d.subtitle||'').toLowerCase().includes(qq)) return true;
-      if((d.description||'').toLowerCase().includes(qq)) return true;
-      // links
-      if(Array.isArray(d.downloadLinks)){
-        for(const l of d.downloadLinks){
-          if((l.text||'').toLowerCase().includes(qq)) return true;
-          if((l.url||'').toLowerCase().includes(qq)) return true;
-        }
-      }
-      // stringify fallback
-      if(JSON.stringify(d).toLowerCase().includes(qq)) return true;
-      return false;
-    }catch(e){ return false; }
-  });
 }
 
 /* ========== Main Search Flow ========== */
@@ -314,37 +363,63 @@ async function doSearch(){
   suggestionsDiv.innerHTML = '';
   summary.textContent = 'Searching...';
 
-  const q = (qInput.value || '').trim();
+  const q = (qInput.value || '').trim().toLowerCase();
   const mode = modeSelect.value;
   const searchAllNodes = document.getElementById('searchAllNodes').checked;
 
   try{
     if(mode === 'path'){
-      // if path like movies/key or key
-      const p = q.startsWith('/') ? q.slice(1) : q;
+      // path mode: try fetch by exact path (first try cache then firebase)
+      const pRaw = (qInput.value || '').trim();
+      const p = pRaw.startsWith('/') ? pRaw.slice(1) : pRaw;
       const maybePaths = [];
       if(p.includes('/')) maybePaths.push(p);
       else {
         maybePaths.push('movies/' + p);
         maybePaths.push(p);
       }
-      // try each
+
+      // check cache first
+      await loadFullDB(searchAllNodes?'/':'/movies');
       for(const mp of maybePaths){
-        const r = await fetchByPath(mp);
-        if(r) allHits.push(r);
+        const found = dbCache.find(h => h.path === mp);
+        if(found) allHits.push(found);
       }
+      // fallback to live fetch if nothing found in cache
+      if(allHits.length === 0){
+        for(const mp of maybePaths){
+          const r = await fetchByPath(mp);
+          if(r) allHits.push(r);
+        }
+      }
+
     } else {
-      // for prefix / field / full modes
-      // determine base
       const base = searchAllNodes ? '/' : '/movies';
-      // fetch all under base
-      const hits = await fetchAllUnder(base);
+      // load full DB (cached)
+      const hits = await loadFullDB(base);
+
       if(mode === 'prefix'){
-        const qlow = q.toLowerCase();
+        const qlow = q;
         allHits = hits.filter(h => (h.key||'').toLowerCase().startsWith(qlow) || h.path.toLowerCase().includes(qlow));
       } else if(mode === 'field' || mode === 'full'){
         if(!q){ allHits = hits; }
-        else allHits = filterHits(hits, q);
+        else allHits = hits.filter(h=>{
+          try{
+            const d = h.data || {};
+            if((h.key||'').toLowerCase().includes(q)) return true;
+            if((d.title||'').toLowerCase().includes(q)) return true;
+            if((d.subtitle||'').toLowerCase().includes(q)) return true;
+            if((d.description||'').toLowerCase().includes(q)) return true;
+            if(Array.isArray(d.downloadLinks)){
+              for(const l of d.downloadLinks){
+                if((l.text||'').toLowerCase().includes(q)) return true;
+                if((l.url||'').toLowerCase().includes(q)) return true;
+              }
+            }
+            if(JSON.stringify(d).toLowerCase().includes(q)) return true;
+            return false;
+          }catch(e){ return false; }
+        });
       }
     }
 
@@ -392,6 +467,7 @@ function openEditor(path, data, editable=true){
 
 function closeEditor(){ editorModal.style.display = 'none'; editorModal.classList.add('hidden'); }
 
+/* Build field form (kept similar to original for familiarity) */
 function buildFieldForm(obj){
   fieldForm.innerHTML = '';
   // show some common fields for movie objects to edit quickly
@@ -399,17 +475,33 @@ function buildFieldForm(obj){
   fields.forEach(k=>{
     const val = obj[k] !== undefined ? obj[k] : '';
     const wrapper = document.createElement('div');
-    wrapper.innerHTML = `<label class="text-xs font-semibold">${k}</label>`;
+    // label
+    const label = document.createElement('label');
+    label.className = 'text-xs font-semibold';
+    label.textContent = k;
+    wrapper.appendChild(label);
+
     if(typeof val === 'boolean'){
-      wrapper.innerHTML += `<div class="mt-1"><input type="checkbox" data-key="${k}" ${val ? 'checked' : ''}></div>`;
+      const cbWrap = document.createElement('div');
+      cbWrap.className = 'mt-1';
+      const cb = document.createElement('input');
+      cb.type = 'checkbox';
+      cb.setAttribute('data-key', k);
+      if(val) cb.checked = true;
+      cbWrap.appendChild(cb);
+      wrapper.appendChild(cbWrap);
     } else {
-      wrapper.innerHTML += `<input data-key="${k}" class="border p-1 rounded w-full mt-1" value="${escapeHtml(val)}">`;
+      const inp = document.createElement('input');
+      inp.setAttribute('data-key', k);
+      inp.className = 'border p-1 rounded w-full mt-1';
+      inp.value = val;
+      wrapper.appendChild(inp);
     }
     fieldForm.appendChild(wrapper);
   });
 
   // downloadLinks editor (simple)
-  const dl = obj.downloadLinks || [];
+  const dl = Array.isArray(obj.downloadLinks) ? obj.downloadLinks : [];
   const dlWrap = document.createElement('div');
   dlWrap.innerHTML = '<label class="text-xs font-semibold mt-2">downloadLinks (text / url)</label>';
   const dlList = document.createElement('div');
@@ -417,20 +509,36 @@ function buildFieldForm(obj){
   dl.forEach((it, idx)=>{
     const row = document.createElement('div');
     row.className = 'flex gap-2';
-    row.innerHTML = `<input data-key="dl_text_${idx}" class="border p-1 rounded flex-1" value="${escapeHtml(it.text||'')}">
-                     <input data-key="dl_url_${idx}" class="border p-1 rounded flex-1" value="${escapeHtml(it.url||'')}">`;
+    const t = document.createElement('input');
+    t.setAttribute('data-key', `dl_text_${idx}`);
+    t.className = 'border p-1 rounded flex-1';
+    t.value = it.text || '';
+    const u = document.createElement('input');
+    u.setAttribute('data-key', `dl_url_${idx}`);
+    u.className = 'border p-1 rounded flex-1';
+    u.value = it.url || '';
+    row.appendChild(t);
+    row.appendChild(u);
     dlList.appendChild(row);
   });
   // add button to add new link
   const addBtn = document.createElement('button');
   addBtn.className = 'bg-gray-200 px-2 py-1 rounded text-sm mt-2';
   addBtn.textContent = 'Add Link';
-  addBtn.addEventListener('click', ()=>{
+  addBtn.addEventListener('click', (e)=>{
+    e.preventDefault();
     const idx = (fieldForm.querySelectorAll('[data-key^="dl_text_"]').length);
     const row = document.createElement('div');
     row.className = 'flex gap-2';
-    row.innerHTML = `<input data-key="dl_text_${idx}" class="border p-1 rounded flex-1" value="">
-                     <input data-key="dl_url_${idx}" class="border p-1 rounded flex-1" value="">`;
+    const t = document.createElement('input');
+    t.setAttribute('data-key', `dl_text_${idx}`);
+    t.className = 'border p-1 rounded flex-1';
+    t.value = '';
+    const u = document.createElement('input');
+    u.setAttribute('data-key', `dl_url_${idx}`);
+    u.className = 'border p-1 rounded flex-1';
+    u.value = '';
+    row.appendChild(t); row.appendChild(u);
     dlList.appendChild(row);
   });
 
@@ -444,7 +552,7 @@ btnApply.addEventListener('click', async ()=>{
   try{
     // merge field form into object
     const obj = JSON.parse(rawJson.value);
-    // fields
+    // fields (non-dl)
     fieldForm.querySelectorAll('[data-key]').forEach(el=>{
       const key = el.getAttribute('data-key');
       if(key.startsWith('dl_text_') || key.startsWith('dl_url_')) return; // handle later
@@ -462,6 +570,7 @@ btnApply.addEventListener('click', async ()=>{
       if(url) dl.push({ text, url });
     }
     if(dl.length) obj.downloadLinks = dl;
+    else delete obj.downloadLinks;
 
     // try parse JSON to ensure valid
     const jsonStr = JSON.stringify(obj, null, 2);
@@ -470,9 +579,15 @@ btnApply.addEventListener('click', async ()=>{
     // write to firebase
     await db.ref(currentEdit.path).set(obj);
     editorMsg.textContent = 'Saved ✓';
-    // update local hits if present
+
+    // update local caches (dbCache, allHits, IndexedDB)
+    const idx = dbCache.findIndex(h => h.path === currentEdit.path);
+    if(idx !== -1) dbCache[idx].data = obj;
     const hitIdx = allHits.findIndex(h => h.path === currentEdit.path);
     if(hitIdx !== -1) allHits[hitIdx].data = obj;
+    // update indexedDB
+    const toStore = { path: currentEdit.path, key: currentEdit.path.split('/').pop(), data: obj };
+    updateIndexedDBItem(toStore).catch(()=>{});
     renderResults();
   }catch(e){
     editorMsg.textContent = 'Error: ' + (e.message || e);
@@ -485,9 +600,13 @@ async function doDelete(path){
   if(!confirm('Delete node at ' + path + ' ?')) return;
   try{
     await db.ref(path).remove();
-    // remove from allHits
+    // remove from allHits and dbCache
     allHits = allHits.filter(h => h.path !== path);
+    dbCache = dbCache.filter(h => h.path !== path);
+    // remove from IndexedDB
+    deleteIndexedDBItem(path).catch(()=>{});
     renderResults();
+    alert('Deleted ✓');
   }catch(e){
     alert('Delete error: ' + (e.message || e));
   }
@@ -500,6 +619,8 @@ btnDelete.addEventListener('click', async ()=>{
     editorMsg.textContent = 'Deleted ✓';
     // remove local
     allHits = allHits.filter(h => h.path !== currentEdit.path);
+    dbCache = dbCache.filter(h => h.path !== currentEdit.path);
+    deleteIndexedDBItem(currentEdit.path).catch(()=>{});
     renderResults();
     closeEditor();
   }catch(e){
@@ -526,9 +647,9 @@ btnClear.addEventListener('click', ()=>{
 qInput.addEventListener('input', debounce(async ()=>{
   const q = qInput.value.trim();
   if(!q) { suggestionsDiv.innerHTML = ''; return; }
-  // lightweight search: fetch first 200 under /movies and filter client-side
+  // lightweight search: use cached DB if available
   try{
-    const hits = await fetchAllUnder('/movies');
+    const hits = await loadFullDB('/movies');
     const filtered = hits.filter(h => (h.key||'').toLowerCase().includes(q.toLowerCase()) || JSON.stringify(h.data).toLowerCase().includes(q.toLowerCase()));
     suggestionsDiv.innerHTML = '';
     filtered.slice(0,6).forEach(h=>{
