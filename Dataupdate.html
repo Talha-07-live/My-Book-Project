@@ -25,56 +25,22 @@
     <!-- Header / Auth -->
     <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-6 gap-4 sm:gap-0">
       <h1 class="text-xl sm:text-2xl font-bold">Advanced Firebase Admin Panel</h1>
-      <div id="authArea" class="flex flex-col sm:flex-row items-start sm:items-center gap-3 w-full sm:w-auto">
-        <div id="userInfo" class="hidden flex items-center gap-3">
+      <div id="authArea" class="flex items-center gap-3 w-full sm:w-auto">
+        <div id="userInfo" class="hidden items-center gap-3">
           <span id="uidLabel" class="mono text-sm"></span>
-          <button id="btnLogout" class="bg-gray-700 text-white px-3 py-1 rounded hover:bg-gray-800 transition">Logout</button>
+          <button id="btnLogout" class="bg-gray-700 text-white px-3 py-1 rounded">Logout</button>
         </div>
-        <div id="loginBox" class="bg-white p-3 rounded shadow w-full sm:w-80 md:w-96">
+        <div id="loginBox" class="bg-white p-3 rounded shadow w-full sm:w-96">
           <input id="email" class="border p-2 rounded w-full mb-2" placeholder="Admin email">
           <input id="password" type="password" class="border p-2 rounded w-full mb-2" placeholder="Password">
           <div class="flex flex-col sm:flex-row gap-2">
-            <button id="btnLogin" class="bg-blue-600 text-white px-4 py-2 rounded flex-1 w-full sm:w-auto hover:bg-blue-700 transition">Login</button>
-            <button id="btnDemo" title="Quick demo" class="bg-gray-200 px-3 py-2 rounded flex-1 w-full sm:w-auto hover:bg-gray-300 transition">Demo</button>
+            <button id="btnLogin" class="bg-blue-600 text-white px-4 py-2 rounded flex-1 w-full sm:w-auto">Login</button>
+            <button id="btnDemo" title="Quick demo" class="bg-gray-200 px-3 py-2 rounded w-full sm:w-auto">Demo</button>
           </div>
           <p id="loginErr" class="text-red-600 text-sm mt-2"></p>
         </div>
       </div>
     </div>
-
-    <!-- Panel -->
-    <div id="panel" class="hidden bg-white p-4 rounded shadow">
-
-      <!-- Controls Grid -->
-      <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 mb-3">
-
-        <div>
-          <label class="block text-sm font-semibold mb-1">Search Mode</label>
-          <select id="mode" class="border p-2 rounded w-full">
-            <option value="path">Path / exact key (movies/KEY or movies/KEY/sub)</option>
-            <option value="prefix">Key prefix (startsWith)</option>
-            <option value="field">Field search (title / subtitle / description / link)</option>
-            <option value="full">Full-text (title|subtitle|desc|links)</option>
-          </select>
-        </div>
-
-        <div>
-          <label class="block text-sm font-semibold mb-1">Search Query</label>
-          <input id="q" class="border p-2 rounded w-full" placeholder="e.g. Attack On Titan OR 720p">
-          <div class="text-xs text-gray-500 mt-1">Tip: use short keywords; for prefix mode type start of key</div>
-        </div>
-
-        <div>
-          <label class="block text-sm font-semibold mb-1">Options</label>
-          <div class="flex flex-col gap-2">
-            <label class="flex items-center gap-2"><input type="checkbox" id="searchAllNodes"> Search entire DB (not just /movies)</label>
-            <div class="flex flex-col sm:flex-row gap-2 mt-2">
-              <button id="btnSearch" class="bg-green-600 text-white px-4 py-2 rounded flex-1 w-full sm:w-auto hover:bg-green-700 transition">Search</button>
-              <button id="btnClear" class="bg-gray-200 px-4 py-2 rounded flex-1 w-full sm:w-auto hover:bg-gray-300 transition">Clear</button>
-            </div>
-          </div>
-        </div>
-      </div>
 
     <!-- Panel -->
     <div id="panel" class="hidden bg-white p-4 rounded shadow">
@@ -94,7 +60,7 @@
 
         <div>
           <label class="block text-sm font-semibold mb-1">Search Query</label>
-          <input id="q" class="border p-2 rounded w-full" placeholder="e.g. Attack On Titan OR 720p OR john">
+          <input id="q" class="border p-2 rounded w-full" placeholder="e.g. Attack On Titan OR 720p OR john Wick">
           <div class="text-xs text-gray-500 mt-1">Tip: use short keywords; for prefix mode type start of key</div>
         </div>
 
@@ -108,6 +74,7 @@
             </div>
           </div>
         </div>
+
       </div>
 
       <!-- Live suggestions -->
@@ -175,7 +142,6 @@
           </div>
         </div>
       </div>
-
     </div>
 
 <script>
