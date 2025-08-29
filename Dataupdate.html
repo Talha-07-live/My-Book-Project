@@ -152,6 +152,7 @@ const firebaseConfig = {
   measurementId: "G-F763MR7FR9"
 };
 const ADMIN_UID = "PDK5rMhfUAc2mFA7VwKh3EtItov1";
+
 /* ================ INIT =================== */
 firebase.initializeApp(firebaseConfig);
 const db = firebase.database();
@@ -194,9 +195,8 @@ document.getElementById('btnDemo').addEventListener('click', ()=> {
   document.getElementById('q').value = 'Jawan'; // demo
 });
 
-/* ================= INDEXEDDB CACHING ================= */
-let dbCache = []; // holds full dataset as [{path,key,data}]
-let dbLoaded = false;
+/* ================= INDEXEDDB CACHING (kept for editor/offline backup) ================= */
+let dbCache = []; // local mirrors when editing/viewing
 let idbInstance = null;
 
 function openIDB(){
@@ -215,51 +215,6 @@ function openIDB(){
   });
 }
 
-async function loadFullDB(base='/movies'){
-  if(dbLoaded) return dbCache;
-  // try IndexedDB
-  try{
-    const idb = await openIDB();
-    if(idb){
-      const tx = idb.transaction('items','readonly');
-      const store = tx.objectStore('items');
-      const allReq = store.getAll();
-      const allItems = await new Promise((res,rej)=>{
-        allReq.onsuccess = ()=> res(allReq.result);
-        allReq.onerror = ()=> rej(allReq.error);
-      });
-      if(allItems && allItems.length>0){
-        dbCache = allItems;
-        dbLoaded = true;
-        return dbCache;
-      }
-    }
-  }catch(e){
-    console.warn('IndexedDB read failed', e);
-  }
-
-  // fallback: fetch from firebase
-  const snap = await db.ref(base).get();
-  if(!snap.exists()){ dbCache = []; dbLoaded=true; return dbCache; }
-  const val = snap.val();
-  dbCache = Object.keys(val).map(k=>({path: base.replace(/\/$/,'') + '/' + k, key:k, data: val[k]}));
-
-  // store into indexedDB (best effort, async)
-  try{
-    const idb = await openIDB();
-    if(idb){
-      const tx = idb.transaction('items','readwrite');
-      const store = tx.objectStore('items');
-      for(const item of dbCache) store.put(item);
-      // no need to await tx.complete here
-    }
-  }catch(e){ console.warn('IndexedDB write failed', e); }
-
-  dbLoaded = true;
-  return dbCache;
-}
-
-/* helpers to keep indexedDB in sync after edits/delete */
 async function updateIndexedDBItem(item){
   try{
     const idb = await openIDB();
@@ -279,7 +234,12 @@ async function deleteIndexedDBItem(path){
   }catch(e){ console.warn('IDB delete failed', e); }
 }
 
-/* ============== SEARCH LOGIC ============== */
+/* ================== SEARCH CONFIG ================== */
+const MAX_PER_QUERY = 500; // each firebase query limit (tune if needed)
+const MAX_TOTAL_RESULTS = 2000; // cap combined results shown (protect UI)
+const DEFAULT_BASE = '/movies';
+
+/* ================ DOM ELEMENTS ================ */
 const qInput = document.getElementById('q');
 const modeSelect = document.getElementById('mode');
 const btnSearch = document.getElementById('btnSearch');
@@ -295,23 +255,70 @@ const pageInfo = document.getElementById('pageInfo');
 let allHits = []; // [{path,key,data}]
 let page = 0;
 
+/* ---------- utility ---------- */
+function escapeHtml(s){ return (s+'').replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;'); }
+function debounce(fn, ms=350){
+  let t;
+  return (...a)=>{ clearTimeout(t); t = setTimeout(()=> fn(...a), ms); };
+}
+
+/* ================= FIREBASE QUERY HELPERS (always fresh) ================== */
+
+// Query by child prefix (e.g., title starting with q)
+async function queryByChildPrefix(base, child, q, limit = MAX_PER_QUERY){
+  try{
+    const ref = db.ref(base).orderByChild(child).startAt(q).endAt(q + "\uf8ff").limitToFirst(limit);
+    const snap = await ref.get();
+    if(!snap.exists()) return [];
+    const val = snap.val();
+    return Object.keys(val).map(k => ({ path: base.replace(/\/$/,'') + '/' + k, key: k, data: val[k] }));
+  }catch(e){
+    console.warn('queryByChildPrefix error', child, e);
+    return [];
+  }
+}
+
+// Query by key prefix (order by key)
+async function queryByKeyPrefix(base, q, limit = MAX_PER_QUERY){
+  try{
+    const ref = db.ref(base).orderByKey().startAt(q).endAt(q + "\uf8ff").limitToFirst(limit);
+    const snap = await ref.get();
+    if(!snap.exists()) return [];
+    const val = snap.val();
+    return Object.keys(val).map(k => ({ path: base.replace(/\/$/,'') + '/' + k, key: k, data: val[k] }));
+  }catch(e){
+    console.warn('queryByKeyPrefix error', e);
+    return [];
+  }
+}
+
+// Fetch a single node by exact path (live)
+async function fetchByPath(path){
+  try{
+    const snap = await db.ref(path).get();
+    if(!snap.exists()) return null;
+    return { path, key: path.split('/').pop(), data: snap.val() };
+  }catch(e){ console.error(e); return null; }
+}
+
+/* ========== RENDER & PAGINATION ========== */
 function setSummary(){
   summary.textContent = `${allHits.length} result(s). Showing page ${page+1}`;
   pageInfo.textContent = `Page ${page+1} / ${Math.max(1, Math.ceil(allHits.length / parseInt(perPageSel.value || 10)))}`;
 }
 
 function renderResults(){
-  // virtualized-ish: only render current page
   resultsTbody.innerHTML = '';
   const perPage = parseInt(perPageSel.value || 10);
   const start = page * perPage;
   const subset = allHits.slice(start, start + perPage);
   subset.forEach((hit,i)=>{
     const tr = document.createElement('tr');
+    const titleHtml = (hit.data && hit.data.title) ? ('<strong>' + escapeHtml(hit.data.title) + '</strong><div class="text-xs text-gray-500">'+ escapeHtml(((hit.data.subtitle||'')+'').toString().slice(0,80)) +'</div>') : ('<pre class="json mono">'+ escapeHtml(JSON.stringify(hit.data)).slice(0,200) +'</pre>');
     tr.innerHTML = `
       <td class="px-3 py-2 text-sm">${start + i + 1}</td>
       <td class="px-3 py-2 mono text-sm">${hit.path}</td>
-      <td class="px-3 py-2 text-sm">${(hit.data && hit.data.title) ? '<strong>' + escapeHtml(hit.data.title) + '</strong><div class="text-xs text-gray-500">'+ escapeHtml(((hit.data.subtitle||'')+'').toString().slice(0,80)) +'</div>' : '<pre class="json mono">'+ escapeHtml(JSON.stringify(hit.data)).slice(0,200) +'</pre>'}</td>
+      <td class="px-3 py-2 text-sm">${titleHtml}</td>
       <td class="px-3 py-2 text-sm">
         <button class="bg-blue-600 text-white px-2 py-1 rounded viewBtn">View</button>
         <button class="bg-yellow-500 text-white px-2 py-1 rounded editBtn">Edit</button>
@@ -326,27 +333,7 @@ function renderResults(){
   setSummary();
 }
 
-/* ---------- utility ---------- */
-function escapeHtml(s){ return (s+'').replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;'); }
-
-function debounce(fn, ms=350){
-  let t;
-  return (...a)=>{ clearTimeout(t); t = setTimeout(()=> fn(...a), ms); };
-}
-
-/* ========== search helpers ========== */
-
-// Fetch a node by exact path (from Firebase live)
-async function fetchByPath(path){
-  try{
-    const snap = await db.ref(path).get();
-    if(!snap.exists()) return null;
-    return { path, key: path.split('/').pop(), data: snap.val() };
-  }catch(e){ console.error(e); return null; }
-}
-
-/* ========== Main Search Flow ========== */
-
+/* ========== MAIN SEARCH FLOW (always fresh, safe limits) ========== */
 async function doSearch(){
   allHits = [];
   page = 0;
@@ -354,67 +341,99 @@ async function doSearch(){
   suggestionsDiv.innerHTML = '';
   summary.textContent = 'Searching...';
 
-  const q = (qInput.value || '').trim().toLowerCase();
+  const qRaw = (qInput.value || '').trim();
+  const q = qRaw.toLowerCase();
   const mode = modeSelect.value;
   const searchAllNodes = document.getElementById('searchAllNodes').checked;
+  const base = searchAllNodes ? '/' : DEFAULT_BASE;
 
   try{
     if(mode === 'path'){
-      // path mode: try fetch by exact path (first try cache then firebase)
-      const pRaw = (qInput.value || '').trim();
-      const p = pRaw.startsWith('/') ? pRaw.slice(1) : pRaw;
+      // try direct path fetch (fresh)
+      const pRaw = qRaw;
+      const p = pRaw.startsWith('/') ? pRaw : pRaw;
       const maybePaths = [];
       if(p.includes('/')) maybePaths.push(p);
       else {
-        maybePaths.push('movies/' + p);
+        maybePaths.push(base.replace(/\/$/,'') + '/' + p);
         maybePaths.push(p);
       }
 
-      // check cache first
-      await loadFullDB(searchAllNodes?'/':'/movies');
       for(const mp of maybePaths){
-        const found = dbCache.find(h => h.path === mp);
-        if(found) allHits.push(found);
-      }
-      // fallback to live fetch if nothing found in cache
-      if(allHits.length === 0){
-        for(const mp of maybePaths){
-          const r = await fetchByPath(mp);
-          if(r) allHits.push(r);
-        }
+        const r = await fetchByPath(mp);
+        if(r) allHits.push(r);
       }
 
-    } else {
-      const base = searchAllNodes ? '/' : '/movies';
-      // load full DB (cached)
-      const hits = await loadFullDB(base);
+    } else if(mode === 'prefix'){
+      // prefer key-based prefix (fast)
+      if(!q) {
+        // no query: load small sample to show
+        const snap = await db.ref(base).orderByKey().limitToFirst(100).get();
+        if(snap.exists()){
+          const val = snap.val();
+          allHits = Object.keys(val).map(k => ({ path: base.replace(/\/$/,'') + '/' + k, key: k, data: val[k] }));
+        } else allHits = [];
+      } else {
+        // query by key prefix
+        const byKey = await queryByKeyPrefix(base, q, MAX_PER_QUERY);
+        allHits = byKey;
+      }
 
-      if(mode === 'prefix'){
-        const qlow = q;
-        allHits = hits.filter(h => (h.key||'').toLowerCase().startsWith(qlow) || h.path.toLowerCase().includes(qlow));
-      } else if(mode === 'field' || mode === 'full'){
-        if(!q){ allHits = hits; }
-        else allHits = hits.filter(h=>{
-          try{
-            const d = h.data || {};
-            if((h.key||'').toLowerCase().includes(q)) return true;
-            if((d.title||'').toLowerCase().includes(q)) return true;
-            if((d.subtitle||'').toLowerCase().includes(q)) return true;
-            if((d.description||'').toLowerCase().includes(q)) return true;
-            if(Array.isArray(d.downloadLinks)){
-              for(const l of d.downloadLinks){
-                if((l.text||'').toLowerCase().includes(q)) return true;
-                if((l.url||'').toLowerCase().includes(q)) return true;
-              }
+    } else { // field or full (try multiple child queries in parallel, combine)
+      if(!q){
+        // if empty query, fetch a small page of latest items (prevent huge transfer)
+        const snap = await db.ref(base).orderByKey().limitToFirst(200).get();
+        if(snap.exists()){
+          const val = snap.val();
+          allHits = Object.keys(val).map(k => ({ path: base.replace(/\/$/,'') + '/' + k, key: k, data: val[k] }));
+        } else allHits = [];
+      } else {
+        // Try to query common fields by prefix (title, subtitle, maybe rating) - these are efficient.
+        const queries = [
+          queryByChildPrefix(base, 'title', q, MAX_PER_QUERY),
+          queryByChildPrefix(base, 'subtitle', q, Math.floor(MAX_PER_QUERY/2)),
+          queryByKeyPrefix(base, q, Math.floor(MAX_PER_QUERY/2))
+        ];
+
+        // also try description prefix but smaller limit (descriptions can be huge)
+        queries.push(queryByChildPrefix(base, 'description', q, Math.floor(MAX_PER_QUERY/4)));
+
+        const settled = await Promise.allSettled(queries);
+        const combined = [];
+        for(const s of settled){
+          if(s.status === 'fulfilled' && Array.isArray(s.value)){
+            for(const item of s.value){
+              // use key+path as unique id
+              if(!combined.find(x => x.path === item.path)) combined.push(item);
             }
-            if(JSON.stringify(d).toLowerCase().includes(q)) return true;
-            return false;
-          }catch(e){ return false; }
-        });
+          }
+        }
+
+        // If we still have few results (or user used a non-prefix search), do a small client-side scan:
+        if(combined.length < 50){
+          // fetch a bounded chunk and filter locally for contains-match
+          try{
+            const snap2 = await db.ref(base).orderByKey().limitToFirst(1000).get(); // bounded scan
+            if(snap2.exists()){
+              const v2 = snap2.val();
+              const arr = Object.keys(v2).map(k=>({ path: base.replace(/\/$/,'') + '/' + k, key: k, data: v2[k] }));
+              const filtered = arr.filter(h=>{
+                try{
+                  const sfull = JSON.stringify(h.data).toLowerCase();
+                  return (h.key||'').toLowerCase().includes(q) || sfull.includes(q);
+                }catch(e){ return false; }
+              });
+              for(const it of filtered) if(!combined.find(x=>x.path===it.path)) combined.push(it);
+            }
+          }catch(e){ console.warn('fallback scan failed', e); }
+        }
+
+        // finally set combined (cap results)
+        allHits = combined.slice(0, MAX_TOTAL_RESULTS);
       }
     }
 
-    // suggestions: top 6 keys
+    // Prepare suggestions (top 6)
     suggestionsDiv.innerHTML = '';
     allHits.slice(0,6).forEach(h=>{
       const b = document.createElement('button');
@@ -423,6 +442,18 @@ async function doSearch(){
       b.addEventListener('click', ()=> { qInput.value = h.key; modeSelect.value = 'path'; doSearch(); });
       suggestionsDiv.appendChild(b);
     });
+
+    // update dbCache for editor convenience (not used for search)
+    dbCache = allHits.slice(0, MAX_PER_QUERY).map(x=>({ path:x.path, key:x.key, data:x.data }));
+    // also try to populate indexedDB asynchronously (best-effort)
+    try{
+      const idb = await openIDB();
+      if(idb){
+        const tx = idb.transaction('items','readwrite');
+        const store = tx.objectStore('items');
+        for(const item of dbCache) store.put(item);
+      }
+    }catch(e){ /* ignore */ }
 
     renderResults();
   }catch(e){
@@ -458,15 +489,12 @@ function openEditor(path, data, editable=true){
 
 function closeEditor(){ editorModal.style.display = 'none'; editorModal.classList.add('hidden'); }
 
-/* Build field form (kept similar to original for familiarity) */
 function buildFieldForm(obj){
   fieldForm.innerHTML = '';
-  // show some common fields for movie objects to edit quickly
   const fields = ['title','poster','subtitle','description','rating','quality','releasedAt','trending','pinned'];
   fields.forEach(k=>{
     const val = obj[k] !== undefined ? obj[k] : '';
     const wrapper = document.createElement('div');
-    // label
     const label = document.createElement('label');
     label.className = 'text-xs font-semibold';
     label.textContent = k;
@@ -491,7 +519,6 @@ function buildFieldForm(obj){
     fieldForm.appendChild(wrapper);
   });
 
-  // downloadLinks editor (simple)
   const dl = Array.isArray(obj.downloadLinks) ? obj.downloadLinks : [];
   const dlWrap = document.createElement('div');
   dlWrap.innerHTML = '<label class="text-xs font-semibold mt-2">downloadLinks (text / url)</label>';
@@ -512,7 +539,6 @@ function buildFieldForm(obj){
     row.appendChild(u);
     dlList.appendChild(row);
   });
-  // add button to add new link
   const addBtn = document.createElement('button');
   addBtn.className = 'bg-gray-200 px-2 py-1 rounded text-sm mt-2';
   addBtn.textContent = 'Add Link';
@@ -541,16 +567,13 @@ function buildFieldForm(obj){
 /* apply changes from fieldForm into rawJson and save */
 btnApply.addEventListener('click', async ()=>{
   try{
-    // merge field form into object
     const obj = JSON.parse(rawJson.value);
-    // fields (non-dl)
     fieldForm.querySelectorAll('[data-key]').forEach(el=>{
       const key = el.getAttribute('data-key');
-      if(key.startsWith('dl_text_') || key.startsWith('dl_url_')) return; // handle later
+      if(key.startsWith('dl_text_') || key.startsWith('dl_url_')) return;
       if(el.type === 'checkbox') obj[key] = el.checked;
       else obj[key] = el.value;
     });
-    // download links rebuild
     const dlTextEls = Array.from(fieldForm.querySelectorAll('[data-key^="dl_text_"]'));
     const dl = [];
     for(const tEl of dlTextEls){
@@ -563,20 +586,17 @@ btnApply.addEventListener('click', async ()=>{
     if(dl.length) obj.downloadLinks = dl;
     else delete obj.downloadLinks;
 
-    // try parse JSON to ensure valid
     const jsonStr = JSON.stringify(obj, null, 2);
     rawJson.value = jsonStr;
 
-    // write to firebase
     await db.ref(currentEdit.path).set(obj);
     editorMsg.textContent = 'Saved ✓';
 
-    // update local caches (dbCache, allHits, IndexedDB)
+    // update local caches and idb
     const idx = dbCache.findIndex(h => h.path === currentEdit.path);
     if(idx !== -1) dbCache[idx].data = obj;
     const hitIdx = allHits.findIndex(h => h.path === currentEdit.path);
     if(hitIdx !== -1) allHits[hitIdx].data = obj;
-    // update indexedDB
     const toStore = { path: currentEdit.path, key: currentEdit.path.split('/').pop(), data: obj };
     updateIndexedDBItem(toStore).catch(()=>{});
     renderResults();
@@ -591,10 +611,8 @@ async function doDelete(path){
   if(!confirm('Delete node at ' + path + ' ?')) return;
   try{
     await db.ref(path).remove();
-    // remove from allHits and dbCache
     allHits = allHits.filter(h => h.path !== path);
     dbCache = dbCache.filter(h => h.path !== path);
-    // remove from IndexedDB
     deleteIndexedDBItem(path).catch(()=>{});
     renderResults();
     alert('Deleted ✓');
@@ -608,7 +626,6 @@ btnDelete.addEventListener('click', async ()=>{
   try{
     await db.ref(currentEdit.path).remove();
     editorMsg.textContent = 'Deleted ✓';
-    // remove local
     allHits = allHits.filter(h => h.path !== currentEdit.path);
     dbCache = dbCache.filter(h => h.path !== currentEdit.path);
     deleteIndexedDBItem(currentEdit.path).catch(()=>{});
@@ -638,12 +655,11 @@ btnClear.addEventListener('click', ()=>{
 qInput.addEventListener('input', debounce(async ()=>{
   const q = qInput.value.trim();
   if(!q) { suggestionsDiv.innerHTML = ''; return; }
-  // lightweight search: use cached DB if available
   try{
-    const hits = await loadFullDB('/movies');
-    const filtered = hits.filter(h => (h.key||'').toLowerCase().includes(q.toLowerCase()) || JSON.stringify(h.data).toLowerCase().includes(q.toLowerCase()));
+    // lightweight suggestion: prefer key-prefix query (fast)
+    const suggestions = await queryByKeyPrefix(DEFAULT_BASE, q, 10);
     suggestionsDiv.innerHTML = '';
-    filtered.slice(0,6).forEach(h=>{
+    suggestions.slice(0,6).forEach(h=>{
       const b = document.createElement('button');
       b.className = 'px-3 py-1 bg-gray-100 rounded text-sm';
       b.textContent = h.key + ' → ' + (h.data && h.data.title ? h.data.title : '');
