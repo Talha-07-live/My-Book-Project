@@ -158,6 +158,23 @@ firebase.initializeApp(firebaseConfig);
 const db = firebase.database();
 const auth = firebase.auth();
 
+/* ================= LOGIN COOLDOWN / BACKOFF ================= */
+// store failed attempts & cooldown in localStorage to persist across reloads
+const LS_FAIL_COUNT = 'fb_fail_count';
+const LS_COOLDOWN_UNTIL = 'fb_cooldown_until';
+function getFailCount(){ return parseInt(localStorage.getItem(LS_FAIL_COUNT) || '0', 10); }
+function setFailCount(n){ localStorage.setItem(LS_FAIL_COUNT, String(n)); }
+function getCooldownUntil(){ return parseInt(localStorage.getItem(LS_COOLDOWN_UNTIL) || '0', 10); }
+function setCooldownUntil(ts){ localStorage.setItem(LS_COOLDOWN_UNTIL, String(ts)); }
+
+// compute cooldown (ms) based on fail count
+function computeCooldownMs(failCount){
+  // exponential backoff: base 5s, squared growth, capped at 1 hour
+  const base = 5000;
+  const ms = Math.min(60*60*1000, base * Math.pow(failCount, 2));
+  return ms;
+}
+
 /* ================ AUTH UI ================ */
 const loginBox = document.getElementById('loginBox');
 const userInfo = document.getElementById('userInfo');
@@ -167,54 +184,99 @@ const btnLogout = document.getElementById('btnLogout');
 const loginErr = document.getElementById('loginErr');
 const panel = document.getElementById('panel');
 
-auth.onAuthStateChanged(user=>{
+function showAuthUIFor(user){
   if(user && user.uid === ADMIN_UID){
     loginBox.classList.add('hidden');
     userInfo.classList.remove('hidden');
     uidLabel.textContent = user.uid;
     panel.classList.remove('hidden');
-    document.getElementById('loginErr').textContent = '';
+    loginErr.textContent = '';
   } else {
     loginBox.classList.remove('hidden');
     userInfo.classList.add('hidden');
     uidLabel.textContent = '';
     panel.classList.add('hidden');
   }
+}
+
+// run on auth state changes (this will be called automatically on page load if user session exists)
+auth.onAuthStateChanged(user=>{
+  showAuthUIFor(user);
 });
 
+/* ================ LOGIN HANDLER (only via button) ================ */
 btnLogin.addEventListener('click', async ()=>{
   loginErr.textContent = '';
+  const now = Date.now();
+  const cooldownUntil = getCooldownUntil();
+  if(now < cooldownUntil){
+    const left = Math.ceil((cooldownUntil - now) / 1000);
+    loginErr.textContent = `Too many failed attempts. Wait ${left}s before retry.`;
+    return;
+  }
+
   const email = document.getElementById('email').value.trim();
   const password = document.getElementById('password').value.trim();
   if(!email || !password){ loginErr.textContent = 'Enter credentials'; return; }
-  try{ await auth.signInWithEmailAndPassword(email, password); }
-  catch(err){ loginErr.textContent = err.message; }
+
+  // disable button while trying
+  btnLogin.disabled = true;
+  btnLogin.textContent = 'Logging in...';
+
+  try{
+    // IMPORTANT: do not auto-call signIn elsewhere in code
+    const cred = await auth.signInWithEmailAndPassword(email, password);
+    // success => reset fail count & cooldown
+    setFailCount(0);
+    setCooldownUntil(0);
+    loginErr.textContent = '';
+    showAuthUIFor(cred.user);
+  }catch(err){
+    // increment fail count & set cooldown
+    const prevFails = getFailCount();
+    const newFails = prevFails + 1;
+    setFailCount(newFails);
+    const cd = computeCooldownMs(newFails);
+    setCooldownUntil(Date.now() + cd);
+
+    // friendly error text for quota
+    if(err && err.code === 'auth/quota-exceeded'){
+      loginErr.textContent = 'Quota exceeded for verifying passwords. Please wait a while (or use a different auth method).';
+    } else {
+      loginErr.textContent = err.message || 'Login failed';
+    }
+
+    console.warn('Login error', err);
+  } finally {
+    btnLogin.disabled = false;
+    btnLogin.textContent = 'Login';
+  }
 });
-btnLogout.addEventListener('click', ()=> auth.signOut());
+
+btnLogout.addEventListener('click', ()=> auth.signOut().then(()=> {
+  // optional: clear UI
+  showAuthUIFor(null);
+}).catch(e=> console.warn('Signout err', e)));
+
 document.getElementById('btnDemo').addEventListener('click', ()=> {
   document.getElementById('q').value = 'Jawan'; // demo
 });
 
-/* ================= INDEXEDDB CACHING (kept for editor/offline backup) ================= */
-let dbCache = []; // local mirrors when editing/viewing
+/* ================ INDEXEDDB CACHING (editor/offline backup only) ================= */
+let dbCache = []; // local mirror for editor convenience
 let idbInstance = null;
-
 function openIDB(){
   if(!('indexedDB' in window)) return Promise.resolve(null);
   if(idbInstance) return Promise.resolve(idbInstance);
   return new Promise((res,rej)=>{
     const req = indexedDB.open('FirebaseCacheV1',1);
     req.onupgradeneeded = ()=> {
-      try{
-        const dbu = req.result;
-        if(!dbu.objectStoreNames.contains('items')) dbu.createObjectStore('items',{keyPath:'path'});
-      }catch(e){}
+      try{ const dbu = req.result; if(!dbu.objectStoreNames.contains('items')) dbu.createObjectStore('items',{keyPath:'path'}); }catch(e){}
     };
     req.onsuccess = ()=> { idbInstance = req.result; res(idbInstance); };
     req.onerror = ()=> rej(req.error);
   });
 }
-
 async function updateIndexedDBItem(item){
   try{
     const idb = await openIDB();
@@ -235,8 +297,8 @@ async function deleteIndexedDBItem(path){
 }
 
 /* ================== SEARCH CONFIG ================== */
-const MAX_PER_QUERY = 500; // each firebase query limit (tune if needed)
-const MAX_TOTAL_RESULTS = 2000; // cap combined results shown (protect UI)
+const MAX_PER_QUERY = 500; // tuneable
+const MAX_TOTAL_RESULTS = 2000;
 const DEFAULT_BASE = '/movies';
 
 /* ================ DOM ELEMENTS ================ */
@@ -257,14 +319,9 @@ let page = 0;
 
 /* ---------- utility ---------- */
 function escapeHtml(s){ return (s+'').replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;'); }
-function debounce(fn, ms=350){
-  let t;
-  return (...a)=>{ clearTimeout(t); t = setTimeout(()=> fn(...a), ms); };
-}
+function debounce(fn, ms=350){ let t; return (...a)=>{ clearTimeout(t); t = setTimeout(()=> fn(...a), ms); }; }
 
 /* ================= FIREBASE QUERY HELPERS (always fresh) ================== */
-
-// Query by child prefix (e.g., title starting with q)
 async function queryByChildPrefix(base, child, q, limit = MAX_PER_QUERY){
   try{
     const ref = db.ref(base).orderByChild(child).startAt(q).endAt(q + "\uf8ff").limitToFirst(limit);
@@ -277,8 +334,6 @@ async function queryByChildPrefix(base, child, q, limit = MAX_PER_QUERY){
     return [];
   }
 }
-
-// Query by key prefix (order by key)
 async function queryByKeyPrefix(base, q, limit = MAX_PER_QUERY){
   try{
     const ref = db.ref(base).orderByKey().startAt(q).endAt(q + "\uf8ff").limitToFirst(limit);
@@ -291,8 +346,6 @@ async function queryByKeyPrefix(base, q, limit = MAX_PER_QUERY){
     return [];
   }
 }
-
-// Fetch a single node by exact path (live)
 async function fetchByPath(path){
   try{
     const snap = await db.ref(path).get();
@@ -306,7 +359,6 @@ function setSummary(){
   summary.textContent = `${allHits.length} result(s). Showing page ${page+1}`;
   pageInfo.textContent = `Page ${page+1} / ${Math.max(1, Math.ceil(allHits.length / parseInt(perPageSel.value || 10)))}`;
 }
-
 function renderResults(){
   resultsTbody.innerHTML = '';
   const perPage = parseInt(perPageSel.value || 10);
@@ -349,91 +401,66 @@ async function doSearch(){
 
   try{
     if(mode === 'path'){
-      // try direct path fetch (fresh)
       const pRaw = qRaw;
-      const p = pRaw.startsWith('/') ? pRaw : pRaw;
       const maybePaths = [];
-      if(p.includes('/')) maybePaths.push(p);
-      else {
-        maybePaths.push(base.replace(/\/$/,'') + '/' + p);
-        maybePaths.push(p);
-      }
-
+      if(pRaw.includes('/')) maybePaths.push(pRaw);
+      else { maybePaths.push(base.replace(/\/$/,'') + '/' + pRaw); maybePaths.push(pRaw); }
       for(const mp of maybePaths){
         const r = await fetchByPath(mp);
         if(r) allHits.push(r);
       }
 
     } else if(mode === 'prefix'){
-      // prefer key-based prefix (fast)
-      if(!q) {
-        // no query: load small sample to show
+      if(!q){
         const snap = await db.ref(base).orderByKey().limitToFirst(100).get();
-        if(snap.exists()){
-          const val = snap.val();
-          allHits = Object.keys(val).map(k => ({ path: base.replace(/\/$/,'') + '/' + k, key: k, data: val[k] }));
-        } else allHits = [];
+        if(snap.exists()){ const val = snap.val(); allHits = Object.keys(val).map(k => ({ path: base.replace(/\/$/,'') + '/' + k, key: k, data: val[k] })); }
+        else allHits = [];
       } else {
-        // query by key prefix
         const byKey = await queryByKeyPrefix(base, q, MAX_PER_QUERY);
         allHits = byKey;
       }
 
-    } else { // field or full (try multiple child queries in parallel, combine)
+    } else { // field or full
       if(!q){
-        // if empty query, fetch a small page of latest items (prevent huge transfer)
         const snap = await db.ref(base).orderByKey().limitToFirst(200).get();
-        if(snap.exists()){
-          const val = snap.val();
-          allHits = Object.keys(val).map(k => ({ path: base.replace(/\/$/,'') + '/' + k, key: k, data: val[k] }));
-        } else allHits = [];
+        if(snap.exists()){ const val = snap.val(); allHits = Object.keys(val).map(k => ({ path: base.replace(/\/$/,'') + '/' + k, key: k, data: val[k] })); }
+        else allHits = [];
       } else {
-        // Try to query common fields by prefix (title, subtitle, maybe rating) - these are efficient.
         const queries = [
           queryByChildPrefix(base, 'title', q, MAX_PER_QUERY),
           queryByChildPrefix(base, 'subtitle', q, Math.floor(MAX_PER_QUERY/2)),
-          queryByKeyPrefix(base, q, Math.floor(MAX_PER_QUERY/2))
+          queryByKeyPrefix(base, q, Math.floor(MAX_PER_QUERY/2)),
+          queryByChildPrefix(base, 'description', q, Math.floor(MAX_PER_QUERY/4))
         ];
-
-        // also try description prefix but smaller limit (descriptions can be huge)
-        queries.push(queryByChildPrefix(base, 'description', q, Math.floor(MAX_PER_QUERY/4)));
-
         const settled = await Promise.allSettled(queries);
         const combined = [];
         for(const s of settled){
           if(s.status === 'fulfilled' && Array.isArray(s.value)){
             for(const item of s.value){
-              // use key+path as unique id
               if(!combined.find(x => x.path === item.path)) combined.push(item);
             }
           }
         }
 
-        // If we still have few results (or user used a non-prefix search), do a small client-side scan:
         if(combined.length < 50){
-          // fetch a bounded chunk and filter locally for contains-match
           try{
-            const snap2 = await db.ref(base).orderByKey().limitToFirst(1000).get(); // bounded scan
+            const snap2 = await db.ref(base).orderByKey().limitToFirst(1000).get();
             if(snap2.exists()){
               const v2 = snap2.val();
               const arr = Object.keys(v2).map(k=>({ path: base.replace(/\/$/,'') + '/' + k, key: k, data: v2[k] }));
               const filtered = arr.filter(h=>{
-                try{
-                  const sfull = JSON.stringify(h.data).toLowerCase();
-                  return (h.key||'').toLowerCase().includes(q) || sfull.includes(q);
-                }catch(e){ return false; }
+                try{ const sfull = JSON.stringify(h.data).toLowerCase(); return (h.key||'').toLowerCase().includes(q) || sfull.includes(q); }catch(e){ return false; }
               });
               for(const it of filtered) if(!combined.find(x=>x.path===it.path)) combined.push(it);
             }
           }catch(e){ console.warn('fallback scan failed', e); }
         }
 
-        // finally set combined (cap results)
         allHits = combined.slice(0, MAX_TOTAL_RESULTS);
       }
     }
 
-    // Prepare suggestions (top 6)
+    // Prepare suggestions
     suggestionsDiv.innerHTML = '';
     allHits.slice(0,6).forEach(h=>{
       const b = document.createElement('button');
@@ -443,9 +470,8 @@ async function doSearch(){
       suggestionsDiv.appendChild(b);
     });
 
-    // update dbCache for editor convenience (not used for search)
+    // cache small sample for editor convenience
     dbCache = allHits.slice(0, MAX_PER_QUERY).map(x=>({ path:x.path, key:x.key, data:x.data }));
-    // also try to populate indexedDB asynchronously (best-effort)
     try{
       const idb = await openIDB();
       if(idb){
@@ -462,7 +488,7 @@ async function doSearch(){
   }
 }
 
-/* ========== Editor ========== */
+/* ========== Editor & CRUD: unchanged (but safe) ========== */
 const editorModal = document.getElementById('editorModal');
 const editPathLabel = document.getElementById('editPath');
 const rawJson = document.getElementById('rawJson');
@@ -486,7 +512,6 @@ function openEditor(path, data, editable=true){
   rawJson.disabled = !editable;
   btnDelete.disabled = !editable;
 }
-
 function closeEditor(){ editorModal.style.display = 'none'; editorModal.classList.add('hidden'); }
 
 function buildFieldForm(obj){
@@ -564,7 +589,6 @@ function buildFieldForm(obj){
   fieldForm.appendChild(dlWrap);
 }
 
-/* apply changes from fieldForm into rawJson and save */
 btnApply.addEventListener('click', async ()=>{
   try{
     const obj = JSON.parse(rawJson.value);
@@ -592,7 +616,6 @@ btnApply.addEventListener('click', async ()=>{
     await db.ref(currentEdit.path).set(obj);
     editorMsg.textContent = 'Saved ✓';
 
-    // update local caches and idb
     const idx = dbCache.findIndex(h => h.path === currentEdit.path);
     if(idx !== -1) dbCache[idx].data = obj;
     const hitIdx = allHits.findIndex(h => h.path === currentEdit.path);
@@ -637,26 +660,27 @@ btnDelete.addEventListener('click', async ()=>{
 });
 
 /* pagination */
-prevPage.addEventListener('click', ()=> {
-  if(page > 0){ page--; renderResults(); }
-});
-nextPage.addEventListener('click', ()=> {
-  const perPage = parseInt(perPageSel.value || 10);
-  if((page+1) * perPage < allHits.length){ page++; renderResults(); }
-});
+prevPage.addEventListener('click', ()=> { if(page > 0){ page--; renderResults(); }});
+nextPage.addEventListener('click', ()=> { const perPage = parseInt(perPageSel.value || 10); if((page+1) * perPage < allHits.length){ page++; renderResults(); }});
 
 /* bind search */
-btnSearch.addEventListener('click', doSearch);
-btnClear.addEventListener('click', ()=>{
-  qInput.value = ''; modeSelect.value = 'field'; resultsTbody.innerHTML = ''; allHits = []; summary.textContent = 'Cleared';
+btnSearch.addEventListener('click', async ()=> {
+  // if DB rules require auth, make sure user is signed in,
+  // otherwise inform user to login instead of silently calling signIn.
+  const needAuth = false; // set true if your rules require auth for read
+  if(needAuth && !auth.currentUser){
+    loginErr.textContent = 'Please login first to search (DB requires auth).';
+    return;
+  }
+  await doSearch();
 });
+btnClear.addEventListener('click', ()=>{ qInput.value = ''; modeSelect.value = 'field'; resultsTbody.innerHTML = ''; allHits = []; summary.textContent = 'Cleared'; });
 
 /* live suggestions while typing (debounced) */
 qInput.addEventListener('input', debounce(async ()=>{
   const q = qInput.value.trim();
   if(!q) { suggestionsDiv.innerHTML = ''; return; }
   try{
-    // lightweight suggestion: prefer key-prefix query (fast)
     const suggestions = await queryByKeyPrefix(DEFAULT_BASE, q, 10);
     suggestionsDiv.innerHTML = '';
     suggestions.slice(0,6).forEach(h=>{
@@ -670,7 +694,15 @@ qInput.addEventListener('input', debounce(async ()=>{
 }, 300));
 
 /* keyboard: enter triggers search */
-qInput.addEventListener('keydown', (e)=> { if(e.key === 'Enter'){ e.preventDefault(); doSearch(); } });
+qInput.addEventListener('keydown', (e)=> { if(e.key === 'Enter'){ e.preventDefault(); btnSearch.click(); } });
+
+/* ========== Helpful debug/info for dev ==========
+ - Ensure you do NOT call signInWithEmailAndPassword anywhere except btnLogin handler.
+ - If you see auth/quota-exceeded:
+    • stop automated login attempts (we added a cooldown)
+    • consider enabling a secondary auth method for dev (anonymous) or use Admin SDK on server.
+ - If your DB rules require auth but you want public reads for search, consider adjusting rules or create a read-only service account.
+=============================================== */
 
 </script>
 </body>
