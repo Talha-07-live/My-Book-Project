@@ -48,12 +48,12 @@ html,body{height:100%;margin:0;font-family:Poppins, system-ui, -apple-system, Se
 .card:hover{transform:translateY(-4px) scale(1.02);box-shadow:0 14px 40px rgba(0,0,0,.45);}
 .thumb{aspect-ratio:2/3;width:100%;object-fit:cover;display:block;filter:saturate(1.05);vertical-align:middle;}
 .grad{position:absolute;inset:auto 0 0 0;height:52%;background:linear-gradient(180deg,transparent,rgba(0,0,0,.9));pointer-events:none;z-index:5;}
-.ribbon{position:absolute;top:10px;left:10px;background:linear-gradient(90deg,#ff6b6b,#f06595);color:#fff;font-weight:800;padding:6px 10px;border-radius:8px;box-shadow:var(--shadow);font-size:12px;letter-spacing:.4px;z-index:20;}
+.ribbon{position:absolute;top:10px;left:10px;background:linear-gradient(90deg,#ff6b6b,#f06595);color:#fff;font-weight:800;padding:6px 10px;border-radius:8px;box-shadow:0 6px 18px rgba(0,0,0,.35);font-size:12px;letter-spacing:.4px;z-index:20;}
 .badge{position:absolute;bottom:12px;right:12px;background:#1b1530;border:1px solid #2a2348;padding:6px 8px;border-radius:8px;color:#d6d2e6;font-weight:700;font-size:clamp(10px,2vw,12px);z-index:20;}
 .age{position:absolute;bottom:12px;left:12px;display:flex;align-items:center;gap:6px;background:rgba(0,0,0,.55);backdrop-filter:blur(6px);padding:6px 10px;border-radius:999px;font-size:clamp(10px,2vw,12px);z-index:22;color:#d9d6e6;}
 .meta{padding:10px 12px 35px;}
 .title{font-weight:800;font-size:clamp(12px,2.4vw,16px);line-height:1.35;margin:0 0 6px 0;color:#faf8ff;}
-.subtitle{margin:0;color:var(--muted);font-size:clamp(10px,1.8vw,12px);}
+.subtitle{margin:0;color:#a7a4b4;font-size:clamp(10px,1.8vw,12px);}
 .modal{position:fixed;inset:0;background:rgba(0,0,0,.75);display:none;align-items:center;justify-content:center;padding:16px;z-index:99;}
 .modal.show{display:flex;}
 .sheet{width:min(980px,100%);background:#140f26;border:1px solid #302a55;border-radius:20px;overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,.55);}
@@ -67,7 +67,7 @@ html,body{height:100%;margin:0;font-family:Poppins, system-ui, -apple-system, Se
 .d-btn{display:flex;align-items:center;justify-content:center;gap:8px;text-decoration:none;color:#0b0b0b;background:linear-gradient(90deg,var(--primary),var(--primary-2));padding:12px 14px;border-radius:12px;font-weight:800;transition:transform .2s ease;font-size:clamp(12px,2vw,14px);}
 .d-btn:hover{transform:translateY(-2px) scale(1.02);}
 .close{position:absolute;top:14px;right:16px;border:0;background:#1b1530;border:1px solid #2a2348;color:#fff;padding:8px 12px;border-radius:999px;cursor:pointer;}
-.muted{color:var(--muted);font-size:clamp(10px,1.8vw,12px);}
+.muted{color:#a7a4b4;font-size:clamp(10px,1.8vw,12px);}
 .skeleton{position:relative;overflow:hidden;background:#1a1530;border-radius:16px;border:1px solid #2a2348;aspect-ratio:2/3;}
 .skeleton::after{content:"";position:absolute;inset:0;background:linear-gradient(90deg,transparent,rgba(255,255,255,.06),transparent);transform:translateX(-100%);animation:shimmer 1.4s infinite;}
 @keyframes shimmer{to{transform:translateX(100%);}}
@@ -97,15 +97,10 @@ html,body{height:100%;margin:0;font-family:Poppins, system-ui, -apple-system, Se
 #toTopBtn:hover { transform: translateY(-2px) scale(1.05); box-shadow: 0 12px 30px rgba(0,0,0,0.5); }
 #toTopBtn svg { width: 15px; height: 22px; }
 #toTopBtn:focus, #toTopBtn:focus-visible { outline: none; box-shadow: none; }
-.pin-btn{ position:absolute;top:10px;right:10px;z-index:22;width:36px;height:36px;border-radius:10px;border:1px solid rgba(255,255,255,.06);
-  display:grid;place-items:center;background:rgba(0,0,0,.35);backdrop-filter: blur(6px);cursor:pointer;}
+.pin-btn{position:absolute;top:10px;right:10px;z-index:22;width:36px;height:36px;border-radius:10px;border:1px solid rgba(255,255,255,.06);display:grid;place-items:center;background:rgba(0,0,0,.35);backdrop-filter: blur(6px);cursor:pointer;}
 .pin-btn svg{width:18px;height:18px;display:block;pointer-events:none;}
 .pin-btn[aria-pressed="true"]{background:linear-gradient(90deg,#ffd166,#ff8c42);border:none;}
-.pin-star{
-  position:absolute;top:10px;right:10px;z-index:22;width:34px;height:34px;border-radius:8px;display:grid;place-items:center;
-  background:linear-gradient(90deg, rgba(255,215,0,0.12), rgba(255,215,0,0.06));border:1px solid rgba(255,215,0,0.12);
-  pointer-events:none;
-}
+.pin-star{position:absolute;top:10px;right:10px;z-index:22;width:34px;height:34px;border-radius:8px;display:grid;place-items:center;background:linear-gradient(90deg, rgba(255,215,0,0.12), rgba(255,215,0,0.06));border:1px solid rgba(255,215,0,0.12);pointer-events:none;}
 .pin-star svg{width:16px;height:16px;}
 @media (max-width:760px){.searchbar{padding:10px 12px}.searchbar-inner{flex-direction:row;gap:8px}.sugg{top: calc(100% + 6px);left:8px;right:8px;width:calc(100% - 16px)}.logo{font-size:20px;padding:8px}.section-title{padding:10px}.sheet{margin:12px}}
 @media (max-width:460px){.searchbar-inner{flex-direction:column-reverse;align-items:stretch}.searchbar input{border-radius:12px;padding:10px;font-size:15px}.btn{width:100%;padding:10px}.sugg{left:10px;right:10px;width:calc(100% - 20px)}.section-title{flex-direction:row;align-items:center;gap:8px}.grid{gap:12px}}
@@ -116,7 +111,7 @@ html,body{height:100%;margin:0;font-family:Poppins, system-ui, -apple-system, Se
 .credit .heart{color:#ff6b6b;animation:beat 1s infinite alternate;}
 @keyframes beat{to{transform:scale(1.2);}}
 
-/* ==== TICKER CSS (added) ==== */
+/* ===== TICKER CSS (added) ===== */
 .ticker-wrap{padding:0 16px 20px;}
 .ticker-box{
   position:relative;overflow:hidden;background:linear-gradient(90deg,#1b1530,#0e0b1a);
@@ -124,19 +119,20 @@ html,body{height:100%;margin:0;font-family:Poppins, system-ui, -apple-system, Se
 }
 .ticker-track{
   position:absolute;white-space:nowrap;will-change:transform;display:inline-block;
-  animation:marquee 28s linear infinite;
   font-weight:700;font-size:clamp(12px,2.2vw,15px);color:#e9e7ff;padding:10px 0;
+  left:0;top:0;
 }
 .ticker-item{display:inline-block;margin-right:28px}
 .ticker-dot{opacity:.5;margin:0 10px}
-@keyframes marquee{
-  0%{ transform:translateX(100%); }
-  100%{ transform:translateX(-100%); }
-}
 @media (max-width:480px){
   .ticker-box{height:38px}
   .ticker-track{font-size:13px}
 }
+/* ===== END TICKER CSS ===== */
+
+/* ---- compact spacing between Welcome, Updates, Latest Update ---- */
+.section.compact{ padding:0 16px 1px; }
+.section.compact .section-title{ margin-top:7px; }
 </style>
 </head>
 <body>
@@ -153,7 +149,8 @@ html,body{height:100%;margin:0;font-family:Poppins, system-ui, -apple-system, Se
     </div>
   </header>
 
-  <main class="container section">
+  <!-- Welcome (compact) -->
+  <main class="container section compact">
     <div class="section-title">
       <div class="flame">➕</div>
       <h2 class="muted">Welcome</h2>
@@ -163,16 +160,18 @@ html,body{height:100%;margin:0;font-family:Poppins, system-ui, -apple-system, Se
     </div>
   </main>
 
-  <!-- 📰 News Ticker (added: between Welcome & Latest Update) -->
-  <div class="container ticker-wrap">
-    <div class="section-title" style="margin-bottom:10px;">
-      <div class="flame">📰</div>
+  <!-- Updates (Ticker) — compact -->
+  <main class="container section compact">
+    <div class="section-title">
+      <div class="flame">🔔</div>
       <h2>Updates</h2>
     </div>
-    <div class="ticker-box">
-      <div id="tickerTrack" class="ticker-track"></div>
+    <div class="ticker-wrap">
+      <div class="ticker-box">
+        <div id="tickerTrack" class="ticker-track"></div>
+      </div>
     </div>
-  </div>
+  </main>
 
   <main class="container section">
     <div class="section-title">
@@ -201,15 +200,15 @@ html,body{height:100%;margin:0;font-family:Poppins, system-ui, -apple-system, Se
   <footer class="footer">
     <div class="footer-inner">
       <p>© 2020-2025 Talha's Collection. All rights reserved.</p>
-       <p class="credit">Made with <span class="heart">❤️</span> by Talha</p>
+      <p class="credit">Made with <span class="heart">❤️</span> by Talha</p>
     </div>
   </footer>
 
   <button id="toTopBtn" title="Back to top">
-  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
-    <path d="M12 4l-8 8h5v8h6v-8h5z"/>
-  </svg>
-</button>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
+      <path d="M12 4l-8 8h5v8h6v-8h5z"/>
+    </svg>
+  </button>
 
 <script type="module">
 
@@ -617,7 +616,7 @@ function createWorker(){
         const limit = msg.limit || 1000;
         const ids = searchByQuery(q, limit);
         self.postMessage({ type:'result', q, ids, limit });
-      } else if(msg.type === 'cleared'){
+      } else if(msg.type === 'clear'){
         tokenMap.clear(); idToSearch.clear(); idToMeta.clear();
         self.postMessage({ type:'cleared' });
       }
@@ -1096,12 +1095,15 @@ function sortWithPinned(arr){
   });
 }
 
-/* ==== TICKER START (added) ==== */
+/* ====== TICKER JS (ADDED) ====== */
 const tickerTrack = document.getElementById('tickerTrack');
-const TICKER_VISIBLE_MS = 5000;     // fast poll when tab visible
-const TICKER_HIDDEN_MS  = 15000;    // slower when hidden
-let tickerPrevMap = new Map();      // id -> previous item snapshot (for diffs)
-let tickerChecksum = new Map();     // url -> hash to detect file content change
+const tickerBox   = document.querySelector('.ticker-box');
+const TICKER_VISIBLE_MS = 5000;
+const TICKER_HIDDEN_MS  = 15000;
+const ONE_MONTH_MS = 90 * 24 * 60 * 60 * 1000;
+
+let tickerPrevMap = new Map();   // id -> previous snapshot
+let tickerChecksum = new Map();  // url -> hash of content
 
 function inferTypeForTicker(item){
   const tagStr = JSON.stringify(item.tags||[]).toLowerCase();
@@ -1123,10 +1125,12 @@ function getEpisodeLabel(item){
   return n ? `ep${n[1]}` : s.toLowerCase();
 }
 function extractQualitiesAndTexts(item){
-  // capture quality tokens + any button/label text from downloadLinks
   const Q = new Set();
   const texts = new Set();
-  const pushQ=(q)=>{ if(!q) return; let s=String(q).toLowerCase(); const re=/(2160p|1440p|1080p|720p|480p|360p|4k|cam|webdl|hdrip|bluray|brrip)/g; let m; while((m=re.exec(s))) Q.add(m[1]); };
+  const pushQ=(q)=>{ if(!q) return; let s=String(q).toLowerCase();
+    const re=/(2160p|1440p|1080p|720p|480p|360p|4k|cam|webdl|hdrip|bluray|brrip)/g; let m;
+    while((m=re.exec(s))) Q.add(m[1]);
+  };
   if(item.quality) pushQ(item.quality);
   if(Array.isArray(item.qualities)) item.qualities.forEach(pushQ);
   const links = Array.isArray(item.downloadLinks)? item.downloadLinks: [];
@@ -1141,17 +1145,14 @@ function diffTicker(prev, cur){
   const title = cur.title || 'Untitled';
   const type = inferTypeForTicker(cur);
 
-  // Episode: only when changed/increased
   const pe = getEpisodeLabel(prev||{});
   const ce = getEpisodeLabel(cur);
   if(type==='series' && ce && ce!==pe){
     out.push(`${title} — new ${ce} added`);
   }
 
-  // Quality/button text: show newly added
   const {Q: pQ, texts: pT} = extractQualitiesAndTexts(prev||{});
   const {Q: cQ, texts: cT} = extractQualitiesAndTexts(cur||{});
-
   const addedQ = [];
   cQ.forEach(q=>{ if(!pQ.has(q)) addedQ.push(q); });
   if(addedQ.length){
@@ -1167,43 +1168,72 @@ function diffTicker(prev, cur){
   return out;
 }
 function buildTickerItemsLines(items){
-  // Merge & diff vs previous; newest first
+  const since = Date.now() - ONE_MONTH_MS;
+  const recent = items.filter(it=>{
+    const ts = Number(it.updatedAt ?? it.releasedAt ?? 0);
+    return ts && ts >= since;
+  });
+
   const lines = [];
-  for(const cur of items){
+  for(const cur of recent){
     const prev = tickerPrevMap.get(cur.id);
-    const diffs = prev ? diffTicker(prev, cur) : (()=>{ // initial: only episode/quality/text present now
-      const arr=[];
+    const diffs = prev ? diffTicker(prev, cur) : (()=>{
+      const a=[]; const title = cur.title || 'Untitled';
       const ep = getEpisodeLabel(cur);
-      if(inferTypeForTicker(cur)==='series' && ep) arr.push(`${cur.title||'Untitled'} — new ${ep} added`);
+      if(inferTypeForTicker(cur)==='series' && ep) a.push(`${title} — new ${ep} added`);
       const {Q, texts} = extractQualitiesAndTexts(cur);
-      if(Q.size) arr.push(`${cur.title||'Untitled'} — ${Array.from(Q).join(', ')} added`);
-      if(texts.size) arr.push(`${cur.title||'Untitled'} — ${Array.from(texts).map(t=>`"${t}"`).join(', ')} added`);
-      return arr;
+      if(Q.size)    a.push(`${title} — ${Array.from(Q).join(', ')} added`);
+      if(texts.size)a.push(`${title} — ${Array.from(texts).map(t=>`"${t}"`).join(', ')} added`);
+      return a;
     })();
     if(diffs.length) lines.push(...diffs);
     tickerPrevMap.set(cur.id, cur);
   }
-  // de-dupe, newest first (call site ensures merged list is latest-first)
+
   const seen = new Set();
-  return lines.filter(line=>{ if(seen.has(line)) return false; seen.add(line); return true; });
+  return lines.filter(l=>{ if(seen.has(l)) return false; seen.add(l); return true; });
 }
+
+let tickerRAF = null;
+let tickerPos = 0;
+let tickerSpeed = 70;
+function stopMarquee(){ if(tickerRAF){ cancelAnimationFrame(tickerRAF); tickerRAF=null; } }
+function startMarquee(){
+  stopMarquee();
+  if(!tickerTrack || !tickerBox) return;
+
+  const boxW = tickerBox.offsetWidth || 0;
+  const trackW = tickerTrack.scrollWidth || 0;
+
+  tickerPos = boxW;
+
+  const chars = (tickerTrack.textContent||'').length || 1;
+  const durationTarget = Math.min(60, Math.max(18, Math.floor(chars/30)));
+  tickerSpeed = (boxW + trackW) / durationTarget;
+
+  let last = performance.now();
+  const tick = (now)=>{
+    const dt = (now - last) / 1000; last = now;
+    tickerPos -= tickerSpeed * dt;
+    if(tickerPos <= -trackW) tickerPos = boxW;
+    tickerTrack.style.transform = `translateX(${Math.floor(tickerPos)}px)`;
+    tickerRAF = requestAnimationFrame(tick);
+  };
+  tickerRAF = requestAnimationFrame(tick);
+}
+
 function renderTicker(lines){
-  const track = tickerTrack;
-  if(!track) return;
+  if(!tickerTrack) return;
   if(!lines.length){
-    track.innerHTML = `<span class="ticker-item">No updates yet</span>`;
-    return;
+    tickerTrack.innerHTML = `<span class="ticker-item">No updates yet</span>`;
+  }else{
+    const html = lines.map(l=>`<span class="ticker-item">${l}</span><span class="ticker-dot">•</span>`).join('');
+    tickerTrack.innerHTML = html;
   }
-  // Build a long line with separators so it scrolls continuously
-  const joined = lines.map(l=>`<span class="ticker-item">${l}</span><span class="ticker-dot">•</span>`).join('');
-  track.innerHTML = joined + joined; // duplicate for seamless loop
-  // Adjust speed a bit by content length (longer = longer duration)
-  const chars = track.textContent.length;
-  const dur = Math.min(60, Math.max(18, Math.floor(chars/30)));
-  track.style.animationDuration = dur + 's';
+  startMarquee();
 }
+
 async function pullTickerOnce(){
-  // Fetch all DATA_SOURCES (same list), but only re-parse if file changed
   const urls = DATA_SOURCES.map(u=> u + (u.includes('?')?'&':'?') + 't=' + Date.now());
   const texts = await Promise.allSettled(urls.map(u=>fetch(u,{cache:'no-store'}).then(r=>r.text())));
   let merged = [];
@@ -1213,7 +1243,7 @@ async function pullTickerOnce(){
     const url = urls[i];
     const h = fastHash(txt);
     const prev = tickerChecksum.get(url);
-    if(prev && prev===h) return; // unchanged file
+    if(prev && prev===h) return;
     tickerChecksum.set(url, h);
     try{
       const json = JSON.parse(txt);
@@ -1221,22 +1251,22 @@ async function pullTickerOnce(){
     }catch(e){}
   });
   if(!merged.length) return;
-  const list = mergeMoviesList(merged).sort((a,b)=>(Number(b.updatedAt||b.releasedAt||0)) - (Number(a.updatedAt||a.releasedAt||0)));
+  const list = mergeMoviesList(merged)
+    .sort((a,b)=>(Number(b.updatedAt||b.releasedAt||0)) - (Number(a.updatedAt||a.releasedAt||0)));
   const lines = buildTickerItemsLines(list);
   if(lines.length) renderTicker(lines);
 }
+
 function startTickerPolling(){
-  // fast when visible, slower when hidden
   if(window.__tickerInterval) clearInterval(window.__tickerInterval);
   const ms = (document.visibilityState==='visible') ? TICKER_VISIBLE_MS : TICKER_HIDDEN_MS;
   window.__tickerInterval = setInterval(pullTickerOnce, ms);
 }
 document.addEventListener('visibilitychange', startTickerPolling);
 
-// first boot
 pullTickerOnce().then(()=> renderTicker([]));
 startTickerPolling();
-/* ==== TICKER END (added) ==== */
+/* ====== END TICKER JS ====== */
 
 </script>
 </body>
