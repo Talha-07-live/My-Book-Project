@@ -1095,15 +1095,39 @@ function sortWithPinned(arr){
   });
 }
 
-/* ====== TICKER JS (ADDED) ====== */
+
+/* ====== TICKER JS (UPDATED for persistence & 30-day logic) ====== */
 const tickerTrack = document.getElementById('tickerTrack');
 const tickerBox   = document.querySelector('.ticker-box');
 const TICKER_VISIBLE_MS = 5000;
 const TICKER_HIDDEN_MS  = 15000;
-const ONE_MONTH_MS = 90 * 24 * 60 * 60 * 1000;
+const ONE_MONTH_MS = 30 * 24 * 60 * 60 * 1000;
+
+/* >>> ADDED: Tunable speed constants for slow & adaptive ticker <<< */
+const TICKER_MIN_SECONDS = 200;      // minimum duration for one full loop (seconds)
+const TICKER_MAX_SECONDS = 500;     // maximum duration for one full loop (seconds)
+const TICKER_SECONDS_PER_CHAR = 0.28; // seconds contributed per character
 
 let tickerPrevMap = new Map();   // id -> previous snapshot
 let tickerChecksum = new Map();  // url -> hash of content
+window.__lastTickerLines = [];   // currently displayed lines
+
+// Load persisted baseline & last shown lines (so refresh doesn't go blank)
+(function loadTickerState(){
+  try{
+    const prevPairs = JSON.parse(localStorage.getItem('tickerPrevMapV1')||'[]');
+    prevPairs.forEach(([id, obj])=> tickerPrevMap.set(id, obj));
+    const savedLines = JSON.parse(localStorage.getItem('tickerLastLinesV1')||'[]');
+    if(savedLines.length){ window.__lastTickerLines = savedLines; renderTicker(savedLines); }
+  }catch(e){}
+})();
+
+function persistTickerState(){
+  try{
+    localStorage.setItem('tickerPrevMapV1', JSON.stringify(Array.from(tickerPrevMap.entries())));
+    localStorage.setItem('tickerLastLinesV1', JSON.stringify(window.__lastTickerLines||[]));
+  }catch(e){}
+}
 
 function inferTypeForTicker(item){
   const tagStr = JSON.stringify(item.tags||[]).toLowerCase();
@@ -1167,36 +1191,46 @@ function diffTicker(prev, cur){
 
   return out;
 }
+
+// Build lines: include (A) diffs regardless of date, and (B) first-time items only if within 30 days
 function buildTickerItemsLines(items){
   const since = Date.now() - ONE_MONTH_MS;
-  const recent = items.filter(it=>{
-    const ts = Number(it.updatedAt ?? it.releasedAt ?? 0);
-    return ts && ts >= since;
-  });
-
   const lines = [];
-  for(const cur of recent){
+  for(const cur of items){
     const prev = tickerPrevMap.get(cur.id);
-    const diffs = prev ? diffTicker(prev, cur) : (()=>{
-      const a=[]; const title = cur.title || 'Untitled';
-      const ep = getEpisodeLabel(cur);
-      if(inferTypeForTicker(cur)==='series' && ep) a.push(`${title} — new ${ep} added`);
-      const {Q, texts} = extractQualitiesAndTexts(cur);
-      if(Q.size)    a.push(`${title} — ${Array.from(Q).join(', ')} added`);
-      if(texts.size)a.push(`${title} — ${Array.from(texts).map(t=>`"${t}"`).join(', ')} added`);
-      return a;
-    })();
-    if(diffs.length) lines.push(...diffs);
+    if(prev){
+      const diffs = diffTicker(prev, cur);
+      if(diffs.length) lines.push(...diffs);
+    }else{
+      const ts = Number(cur.updatedAt ?? cur.releasedAt ?? 0);
+      if(ts && ts >= since){
+        const initial = [];
+        const title = cur.title || 'Untitled';
+        const ep = getEpisodeLabel(cur);
+        if(inferTypeForTicker(cur)==='series' && ep) initial.push(`${title} — new ${ep} added`);
+        const {Q, texts} = extractQualitiesAndTexts(cur);
+        if(Q.size)    initial.push(`${title} — ${Array.from(Q).join(', ')} added`);
+        if(texts.size)initial.push(`${title} — ${Array.from(texts).map(t=>`"${t}"`).join(', ')} added`);
+        if(initial.length) lines.push(...initial);
+      }
+    }
     tickerPrevMap.set(cur.id, cur);
   }
-
+  // De-dup & newest-first
   const seen = new Set();
-  return lines.filter(l=>{ if(seen.has(l)) return false; seen.add(l); return true; });
+  const uniq = [];
+  for(const l of lines){
+    if(seen.has(l)) continue;
+    seen.add(l);
+    uniq.push(l);
+  }
+  return uniq;
 }
 
 let tickerRAF = null;
 let tickerPos = 0;
 let tickerSpeed = 70;
+/* >>> REPLACED: startMarquee() with slow & adaptive version <<< */
 function stopMarquee(){ if(tickerRAF){ cancelAnimationFrame(tickerRAF); tickerRAF=null; } }
 function startMarquee(){
   stopMarquee();
@@ -1205,10 +1239,14 @@ function startMarquee(){
   const boxW = tickerBox.offsetWidth || 0;
   const trackW = tickerTrack.scrollWidth || 0;
 
-  tickerPos = boxW;
-
   const chars = (tickerTrack.textContent||'').length || 1;
-  const durationTarget = Math.min(60, Math.max(18, Math.floor(chars/30)));
+  const durationTarget = clamp(
+    Math.round(chars * TICKER_SECONDS_PER_CHAR),
+    TICKER_MIN_SECONDS,
+    TICKER_MAX_SECONDS
+  );
+
+  tickerPos = boxW;
   tickerSpeed = (boxW + trackW) / durationTarget;
 
   let last = performance.now();
@@ -1224,13 +1262,19 @@ function startMarquee(){
 
 function renderTicker(lines){
   if(!tickerTrack) return;
-  if(!lines.length){
-    tickerTrack.innerHTML = `<span class="ticker-item">No updates yet</span>`;
-  }else{
+  if(lines.length){
     const html = lines.map(l=>`<span class="ticker-item">${l}</span><span class="ticker-dot">•</span>`).join('');
     tickerTrack.innerHTML = html;
+    window.__lastTickerLines = lines;
+    persistTickerState();
+    startMarquee();
+  }else{
+    // keep previous display; do NOT overwrite with "No updates yet"
+    if(!window.__lastTickerLines.length){
+      tickerTrack.innerHTML = `<span class="ticker-item">No updates yet</span>`;
+      startMarquee();
+    }
   }
-  startMarquee();
 }
 
 async function pullTickerOnce(){
@@ -1242,8 +1286,10 @@ async function pullTickerOnce(){
     const txt = res.value || '';
     const url = urls[i];
     const h = fastHash(txt);
-    const prev = tickerChecksum.get(url);
-    if(prev && prev===h) return;
+    const prevH = tickerChecksum.get(url);
+    // Even if checksum hasn’t changed, we may be on a fresh page load with no prev lines;
+    // allow one pass when __lastTickerLines is empty.
+    if(prevH && prevH===h && window.__lastTickerLines.length){ return; }
     tickerChecksum.set(url, h);
     try{
       const json = JSON.parse(txt);
@@ -1251,10 +1297,13 @@ async function pullTickerOnce(){
     }catch(e){}
   });
   if(!merged.length) return;
+
   const list = mergeMoviesList(merged)
     .sort((a,b)=>(Number(b.updatedAt||b.releasedAt||0)) - (Number(a.updatedAt||a.releasedAt||0)));
   const lines = buildTickerItemsLines(list);
-  if(lines.length) renderTicker(lines);
+
+  // If we found lines, render them; otherwise keep current ticker text
+  if(lines.length){ renderTicker(lines); }
 }
 
 function startTickerPolling(){
@@ -1264,7 +1313,14 @@ function startTickerPolling(){
 }
 document.addEventListener('visibilitychange', startTickerPolling);
 
-pullTickerOnce().then(()=> renderTicker([]));
+/* >>> ADDED: Recalculate speed on resize so pace stays consistent <<< */
+window.addEventListener('resize', debounce(()=> {
+  startMarquee();
+}, 200));
+
+// First draw (use persisted lines immediately), then fetch
+renderTicker(window.__lastTickerLines||[]);
+pullTickerOnce();
 startTickerPolling();
 /* ====== END TICKER JS ====== */
 
