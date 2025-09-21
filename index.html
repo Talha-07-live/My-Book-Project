@@ -237,7 +237,7 @@ const sugg = document.getElementById('sugg');
 
 const clamp = (n,min,max)=> Math.min(max, Math.max(min, n));
 function debounce(fn, delay=120){ let t; return (...a)=>{ clearTimeout(t); t=setTimeout(()=>fn(...a), delay); }; }
-function throttle(fn, wait=200){ let last=0, timer; return (...a)=>{ const now=Date.now(); const remaining = wait - (now - last); if(remaining<=0){ last=now; fn(...a); } else if(!timer){ timer=setTimeout(()=>{ last=Date.now(); timer=null; fn(...a); }, remaining); } }; }
+function throttle(fn, wait=200){ let last=0, timer; return (...a)=>{ const now = Date.now(); const remaining = wait - (now - last); if(remaining<=0){ last=now; fn(...a); } else if(!timer){ timer=setTimeout(()=>{ last=Date.now(); timer=null; fn(...a); }, remaining); } }; }
 function timeAgo(ms){
   if(!ms) return '';
   const then = Number(ms);
@@ -1164,6 +1164,8 @@ function extractQualitiesAndTexts(item){
   }
   return {Q,texts};
 }
+
+
 function diffTicker(prev, cur){
   const out = [];
   const title = cur.title || 'Untitled';
@@ -1171,8 +1173,12 @@ function diffTicker(prev, cur){
 
   const pe = getEpisodeLabel(prev||{});
   const ce = getEpisodeLabel(cur);
+
+  
+  const parts = [];
+
   if(type==='series' && ce && ce!==pe){
-    out.push(`${title} — new ${ce} added`);
+    parts.push(`new ${ce}`);
   }
 
   const {Q: pQ, texts: pT} = extractQualitiesAndTexts(prev||{});
@@ -1180,17 +1186,21 @@ function diffTicker(prev, cur){
   const addedQ = [];
   cQ.forEach(q=>{ if(!pQ.has(q)) addedQ.push(q); });
   if(addedQ.length){
-    out.push(`${title} — ${addedQ.join(', ')} added`);
+    parts.push(addedQ.join(', '));
   }
 
   const addedText = [];
   cT.forEach(t=>{ if(!pT.has(t)) addedText.push(`"${t}"`); });
   if(addedText.length){
-    out.push(`${title} — ${addedText.join(', ')} added`);
+    parts.push(addedText.join(', '));
   }
 
+  if(parts.length){
+    out.push(`${title} — ${parts.join(', ')} added`);
+  }
   return out;
 }
+
 
 
 function buildTickerItemsLines(items){
@@ -1204,14 +1214,16 @@ function buildTickerItemsLines(items){
     }else{
       const ts = Number(cur.updatedAt ?? cur.releasedAt ?? 0);
       if(ts && ts >= since){
-        const initial = [];
+        const parts = [];
         const title = cur.title || 'Untitled';
         const ep = getEpisodeLabel(cur);
-        if(inferTypeForTicker(cur)==='series' && ep) initial.push(`${title} — new ${ep} added`);
+        if(inferTypeForTicker(cur)==='series' && ep) parts.push(`new ${ep}`);
         const {Q, texts} = extractQualitiesAndTexts(cur);
-        if(Q.size)    initial.push(`${title} — ${Array.from(Q).join(', ')} added`);
-        if(texts.size)initial.push(`${title} — ${Array.from(texts).map(t=>`"${t}"`).join(', ')} added`);
-        if(initial.length) lines.push(...initial);
+        if(Q.size)    parts.push(Array.from(Q).join(', '));
+        if(texts.size)parts.push(Array.from(texts).map(t=>`"${t}"`).join(', '));
+        if(parts.length){
+          lines.push(`${title} — ${parts.join(', ')} added`);
+        }
       }
     }
     tickerPrevMap.set(cur.id, cur);
@@ -1226,6 +1238,7 @@ function buildTickerItemsLines(items){
   }
   return uniq;
 }
+
 
 let tickerRAF = null;
 let tickerPos = 0;
