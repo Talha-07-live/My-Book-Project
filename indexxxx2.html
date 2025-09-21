@@ -819,18 +819,20 @@ function sortWithPinned(arr){
   });
 }
 
-/* ===== ticker (one-line updates) ===== */
 const tickerTrack = document.getElementById('tickerTrack');
 const tickerBox   = document.querySelector('.ticker-box');
 const TICKER_VISIBLE_MS = 5000;
 const TICKER_HIDDEN_MS  = 15000;
 const ONE_MONTH_MS = 100 * 24 * 60 * 60 * 1000;
-const TICKER_MIN_SECONDS = 30;
-const TICKER_MAX_SECONDS = 500;
-const TICKER_SECONDS_PER_CHAR = 0.28;
-let tickerPrevMap = new Map();
-let tickerChecksum = new Map();
-window.__lastTickerLines = [];
+
+const TICKER_MIN_SECONDS = 30;      
+const TICKER_MAX_SECONDS = 500;     
+const TICKER_SECONDS_PER_CHAR = 0.28; 
+
+let tickerPrevMap = new Map();   
+let tickerChecksum = new Map();  
+window.__lastTickerLines = [];   
+
 (function loadTickerState(){
   try{
     const prevPairs = JSON.parse(localStorage.getItem('tickerPrevMapV1')||'[]');
@@ -839,12 +841,21 @@ window.__lastTickerLines = [];
     if(savedLines.length){ window.__lastTickerLines = savedLines; renderTicker(savedLines); }
   }catch(e){}
 })();
+
 function persistTickerState(){
   try{
     localStorage.setItem('tickerPrevMapV1', JSON.stringify(Array.from(tickerPrevMap.entries())));
     localStorage.setItem('tickerLastLinesV1', JSON.stringify(window.__lastTickerLines||[]));
   }catch(e){}
 }
+
+/* NEW: helper to detect pure quality texts to avoid duplicates */
+function normalizePureQualityText(t){
+  const s = String(t||'').toLowerCase().trim();
+  const m = s.match(/^(2160p|1440p|1080p|720p|480p|360p|4k|cam|webdl|hdrip|bluray|brrip)$/);
+  return m ? m[1] : null;
+}
+
 function inferTypeForTicker(item){
   const tagStr = JSON.stringify(item.tags||[]).toLowerCase();
   const explicit = (item.type||'').toLowerCase();
@@ -880,23 +891,51 @@ function extractQualitiesAndTexts(item){
   }
   return {Q,texts};
 }
+
+/* --- diff building (edit: filter duplicate pure-quality texts) --- */
+
 function diffTicker(prev, cur){
   const out = [];
   const title = cur.title || 'Untitled';
   const type = inferTypeForTicker(cur);
+
   const pe = getEpisodeLabel(prev||{});
   const ce = getEpisodeLabel(cur);
+
   const parts = [];
-  if(type==='series' && ce && ce!==pe){ parts.push(`new ${ce}`); }
+
+  if(type==='series' && ce && ce!==pe){
+    parts.push(`new ${ce}`);
+  }
+
   const {Q: pQ, texts: pT} = extractQualitiesAndTexts(prev||{});
   const {Q: cQ, texts: cT} = extractQualitiesAndTexts(cur||{});
-  const addedQ = []; cQ.forEach(q=>{ if(!pQ.has(q)) addedQ.push(q); });
-  if(addedQ.length){ parts.push(addedQ.join(', ')); }
-  const addedText = []; cT.forEach(t=>{ if(!pT.has(t)) addedText.push(`"${t}"`); });
-  if(addedText.length){ parts.push(addedText.join(', ')); }
-  if(parts.length){ out.push(`${title} — ${parts.join(', ')} added`); }
+  const addedQ = [];
+  cQ.forEach(q=>{ if(!pQ.has(q)) addedQ.push(q); });
+  if(addedQ.length){
+    parts.push(addedQ.join(', '));
+  }
+
+  const addedTextRaw = [];
+  cT.forEach(t=>{
+    if(!pT.has(t)){
+      const pure = normalizePureQualityText(t);
+      if(pure && cQ.has(pure)) return; // skip duplicate pure quality like "720p"
+      addedTextRaw.push(t);
+    }
+  });
+  if(addedTextRaw.length){
+    parts.push(addedTextRaw.map(t=>`"${t}"`).join(', '));
+  }
+
+  if(parts.length){
+    out.push(`${title} — ${parts.join(', ')} added`);
+  }
   return out;
 }
+
+/* --- initial ticker lines for new items (edit: filter duplicates) --- */
+
 function buildTickerItemsLines(items){
   const since = Date.now() - ONE_MONTH_MS;
   const lines = [];
@@ -913,30 +952,59 @@ function buildTickerItemsLines(items){
         const ep = getEpisodeLabel(cur);
         if(inferTypeForTicker(cur)==='series' && ep) parts.push(`new ${ep}`);
         const {Q, texts} = extractQualitiesAndTexts(cur);
-        if(Q.size)    parts.push(Array.from(Q).join(', '));
-        if(texts.size)parts.push(Array.from(texts).map(t=>`"${t}"`).join(', '));
-        if(parts.length){ lines.push(`${title} — ${parts.join(', ')} added`); }
+
+        if(Q.size) parts.push(Array.from(Q).join(', '));
+
+        const keptTexts = [];
+        texts.forEach(t=>{
+          const pure = normalizePureQualityText(t);
+          if(pure && Q.has(pure)) return; // skip duplicate pure quality text
+          keptTexts.push(t);
+        });
+        if(keptTexts.length) parts.push(keptTexts.map(t=>`"${t}"`).join(', '));
+
+        if(parts.length){
+          lines.push(`${title} — ${parts.join(', ')} added`);
+        }
       }
     }
     tickerPrevMap.set(cur.id, cur);
   }
-  const seen = new Set(), uniq = [];
-  for(const l of lines){ if(!seen.has(l)){ seen.add(l); uniq.push(l); } }
+  
+  const seen = new Set();
+  const uniq = [];
+  for(const l of lines){
+    if(seen.has(l)) continue;
+    seen.add(l);
+    uniq.push(l);
+  }
   return uniq;
 }
+
+/* ---------- rest of ticker + app code unchanged ---------- */
+
 let tickerRAF = null;
 let tickerPos = 0;
 let tickerSpeed = 70;
+
 function stopMarquee(){ if(tickerRAF){ cancelAnimationFrame(tickerRAF); tickerRAF=null; } }
 function startMarquee(){
   stopMarquee();
   if(!tickerTrack || !tickerBox) return;
+
   const boxW = tickerBox.offsetWidth || 0;
   const trackW = tickerTrack.scrollWidth || 0;
+
   const chars = (tickerTrack.textContent||'').length || 1;
-  const durationTarget = clamp(Math.round(chars * TICKER_SECONDS_PER_CHAR),30,500);
+  const durationTarget = clamp(
+    Math.round(chars * TICKER_SECONDS_PER_CHAR),
+    TICKER_MIN_SECONDS,
+    TICKER_MAX_SECONDS
+  );
+
   tickerPos = boxW;
   tickerSpeed = (boxW + trackW) / durationTarget;
+
   let last = performance.now();
   const tick = (now)=>{
     const dt = (now - last) / 1000; last = now;
@@ -947,6 +1015,7 @@ function startMarquee(){
   };
   tickerRAF = requestAnimationFrame(tick);
 }
+
 function renderTicker(lines){
   if(!tickerTrack) return;
   if(lines.length){
@@ -956,12 +1025,14 @@ function renderTicker(lines){
     persistTickerState();
     startMarquee();
   }else{
+    
     if(!window.__lastTickerLines.length){
       tickerTrack.innerHTML = `<span class="ticker-item">No updates yet</span>`;
       startMarquee();
     }
   }
 }
+
 async function pullTickerOnce(){
   const urls = DATA_SOURCES.map(u=> u + (u.includes('?')?'&':'?') + 't=' + Date.now());
   const texts = await Promise.allSettled(urls.map(u=>fetch(u,{cache:'no-store'}).then(r=>r.text())));
@@ -972,6 +1043,8 @@ async function pullTickerOnce(){
     const url = urls[i];
     const h = fastHash(txt);
     const prevH = tickerChecksum.get(url);
+    
+    
     if(prevH && prevH===h && window.__lastTickerLines.length){ return; }
     tickerChecksum.set(url, h);
     try{
@@ -980,20 +1053,33 @@ async function pullTickerOnce(){
     }catch(e){}
   });
   if(!merged.length) return;
-  const list = mergeMoviesList(merged).sort((a,b)=>(Number(b.updatedAt||b.releasedAt||0)) - (Number(a.updatedAt||a.releasedAt||0)));
+
+  const list = mergeMoviesList(merged)
+    .sort((a,b)=>(Number(b.updatedAt||b.releasedAt||0)) - (Number(a.updatedAt||a.releasedAt||0)));
   const lines = buildTickerItemsLines(list);
+
+  
   if(lines.length){ renderTicker(lines); }
 }
+
 function startTickerPolling(){
   if(window.__tickerInterval) clearInterval(window.__tickerInterval);
   const ms = (document.visibilityState==='visible') ? TICKER_VISIBLE_MS : TICKER_HIDDEN_MS;
   window.__tickerInterval = setInterval(pullTickerOnce, ms);
 }
 document.addEventListener('visibilitychange', startTickerPolling);
-window.addEventListener('resize', debounce(()=> { startMarquee(); }, 200));
+
+
+window.addEventListener('resize', debounce(()=> {
+  startMarquee();
+}, 200));
+
+
 renderTicker(window.__lastTickerLines||[]);
 pullTickerOnce();
 startTickerPolling();
+
+
 </script>
 </body>
 </html>
