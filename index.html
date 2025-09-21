@@ -1100,13 +1100,12 @@ function sortWithPinned(arr){
 }
 
 
-
+  
 const tickerTrack = document.getElementById('tickerTrack');
 const tickerBox   = document.querySelector('.ticker-box');
 const TICKER_VISIBLE_MS = 5000;
 const TICKER_HIDDEN_MS  = 15000;
 const ONE_MONTH_MS = 100 * 24 * 60 * 60 * 1000;
-
 
 const TICKER_MIN_SECONDS = 30;      
 const TICKER_MAX_SECONDS = 500;     
@@ -1115,7 +1114,6 @@ const TICKER_SECONDS_PER_CHAR = 0.28;
 let tickerPrevMap = new Map();   
 let tickerChecksum = new Map();  
 window.__lastTickerLines = [];   
-
 
 (function loadTickerState(){
   try{
@@ -1131,6 +1129,13 @@ function persistTickerState(){
     localStorage.setItem('tickerPrevMapV1', JSON.stringify(Array.from(tickerPrevMap.entries())));
     localStorage.setItem('tickerLastLinesV1', JSON.stringify(window.__lastTickerLines||[]));
   }catch(e){}
+}
+
+
+function normalizePureQualityText(t){
+  const s = String(t||'').toLowerCase().trim();
+  const m = s.match(/^(2160p|1440p|1080p|720p|480p|360p|4k|cam|webdl|hdrip|bluray|brrip)$/);
+  return m ? m[1] : null;
 }
 
 function inferTypeForTicker(item){
@@ -1170,6 +1175,7 @@ function extractQualitiesAndTexts(item){
 }
 
 
+
 function diffTicker(prev, cur){
   const out = [];
   const title = cur.title || 'Untitled';
@@ -1178,7 +1184,6 @@ function diffTicker(prev, cur){
   const pe = getEpisodeLabel(prev||{});
   const ce = getEpisodeLabel(cur);
 
-  
   const parts = [];
 
   if(type==='series' && ce && ce!==pe){
@@ -1193,10 +1198,16 @@ function diffTicker(prev, cur){
     parts.push(addedQ.join(', '));
   }
 
-  const addedText = [];
-  cT.forEach(t=>{ if(!pT.has(t)) addedText.push(`"${t}"`); });
-  if(addedText.length){
-    parts.push(addedText.join(', '));
+  const addedTextRaw = [];
+  cT.forEach(t=>{
+    if(!pT.has(t)){
+      const pure = normalizePureQualityText(t);
+      if(pure && cQ.has(pure)) return; 
+      addedTextRaw.push(t);
+    }
+  });
+  if(addedTextRaw.length){
+    parts.push(addedTextRaw.map(t=>`"${t}"`).join(', '));
   }
 
   if(parts.length){
@@ -1205,7 +1216,7 @@ function diffTicker(prev, cur){
   return out;
 }
 
-
+/* --- initial ticker lines for new items (edit: filter duplicates) --- */
 
 function buildTickerItemsLines(items){
   const since = Date.now() - ONE_MONTH_MS;
@@ -1223,8 +1234,17 @@ function buildTickerItemsLines(items){
         const ep = getEpisodeLabel(cur);
         if(inferTypeForTicker(cur)==='series' && ep) parts.push(`new ${ep}`);
         const {Q, texts} = extractQualitiesAndTexts(cur);
-        if(Q.size)    parts.push(Array.from(Q).join(', '));
-        if(texts.size)parts.push(Array.from(texts).map(t=>`"${t}"`).join(', '));
+
+        if(Q.size) parts.push(Array.from(Q).join(', '));
+
+        const keptTexts = [];
+        texts.forEach(t=>{
+          const pure = normalizePureQualityText(t);
+          if(pure && Q.has(pure)) return; // skip duplicate pure quality text
+          keptTexts.push(t);
+        });
+        if(keptTexts.length) parts.push(keptTexts.map(t=>`"${t}"`).join(', '));
+
         if(parts.length){
           lines.push(`${title} — ${parts.join(', ')} added`);
         }
@@ -1243,6 +1263,7 @@ function buildTickerItemsLines(items){
   return uniq;
 }
 
+/* ---------- rest of ticker + app code unchanged ---------- */
 
 let tickerRAF = null;
 let tickerPos = 0;
