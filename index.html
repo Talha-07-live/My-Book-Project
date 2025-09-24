@@ -46,8 +46,18 @@ html,body{height:100%;margin:0;font-family:Poppins, system-ui, -apple-system, Se
 .section-title .flame{width:28px;height:28px;border-radius:8px;background:#1f1838;display:grid;place-items:center;}
 .section-title h2{margin:0;font-size:clamp(14px,2.5vw,20px);letter-spacing:.2px;}
 .request-btn{margin-left:auto;text-decoration:none;color:#0b0b0b;background:linear-gradient(90deg,var(--primary),var(--primary-2));padding:10px 14px;border-radius:12px;font-weight:800;font-size:clamp(12px,2.2vw,14px);}
-.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:18px;margin-top:16px;}
+
+
+.grid{
+  display:grid;
+  grid-template-columns:repeat(auto-fit, minmax(150px, 220px));
+  justify-content:center;
+  gap:18px;
+  margin-top:16px;
+}
+
 @media (max-width:600px){.grid{grid-template-columns:repeat(2,1fr)!important;}}
+
 .card{position:relative;border-radius:16px;overflow:hidden;background:var(--card);border:1px solid #2a2348;box-shadow:var(--shadow);transition:transform .25s ease, box-shadow .25s ease;}
 .card:hover{transform:translateY(-4px) scale(1.02);box-shadow:0 14px 40px rgba(0,0,0,.45);}
 .thumb{aspect-ratio:2/3;width:100%;object-fit:cover;display:block;filter:saturate(1.05);vertical-align:middle;}
