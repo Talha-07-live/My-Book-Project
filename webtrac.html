@@ -1,4 +1,1432 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Talha's Collection</title>
+<meta name="description" content="Talha's Collection — fast, searchable catalog of movies, series and anime with smart updates and download links." />
+<link rel="canonical" href="https://talhas.collection.page.gd/" />
+<meta name="theme-color" content="#0c0714" />
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" onload="this.onload=null;this.rel='stylesheet'">
+<noscript><link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet"></noscript>
+<link rel="icon" href="https://s10.gifyu.com/images/SrMU9.png">
+<style>
+:root{
+  --bg:#0c0714;
+  --card:#161129;
+  --muted:#a7a4b4;
+  --primary:#19d3ff;
+  --primary-2:#4f46e5;
+  --accent:#ff6b6b;
+  --radius:16px;
+  --shadow:0 10px 30px rgba(0,0,0,.35);
+  --topbar-h: 34px; /* if you’re using the top live counter bar */
+}
+*{box-sizing:border-box;}
+html,body{height:100%;margin:0;font-family:Poppins, system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;background:radial-gradient(1000px 600px at -10% -10%, #201a35 0%, transparent 60%), radial-gradient(800px 500px at 120% 0%, #1b1530 0%, transparent 60%), var(--bg);color:#fff;}
+.container{max-width:1280px;margin:0 auto;padding:0px 14px;}
+.section{padding:0px 16px 65px;}
+
+/* (Optional) Very top live viewers bar – keep if you’re using the open top counter */
+.live-topbar{
+  position: sticky;
+  top: 0;
+  z-index: 60;
+  display:flex;align-items:center;justify-content:center;gap:8px;
+  min-height: var(--topbar-h);
+  padding:6px 10px;
+  background: linear-gradient(90deg,#1b1530,#0e0b1a);
+  border-bottom:1px solid #2a2348;
+  font-weight:800;font-size:12px;color:#e9e7ff;
+}
+.live-topbar br{display:none;}
+.live-topbar a{color:inherit;text-decoration:none;}
+
+.header{display:flex;align-items:center;gap:4px;flex-wrap:wrap;position:sticky;top:var(--topbar-h);z-index:40;background:linear-gradient(180deg, rgba(12,7,20,.95), rgba(12,7,20,.65) 60%, transparent);backdrop-filter:saturate(140%) blur(6px);padding:10px 16px;}
+.logo{font-weight:800;letter-spacing:1px;font-size:clamp(20px,3.2vw,34px);}
+.logo span{background:linear-gradient(90deg,#ff6b6b,#feca57,#1dd1a1,#48dbfb,#5f27cd);-webkit-background-clip:text;background-clip:text;color:transparent;}
+.logo .tld{display:inline-block;font-size:0.8em;color:var(--muted);margin-left:4px;}
+.searchbar{margin-left:auto;display:flex;gap:8px;align-items:center;flex:1;justify-content:flex-end;position:relative;padding:10px 0;}
+.searchbar-inner{display:flex;gap:10px;align-items:center;width:100%;max-width:820px;}
+.searchbar input{flex:1;min-width:0;background:#0d0a1a;border:1px solid #2a2348;color:#fff;padding:12px 14px;border-radius:999px;outline:none;transition:.18s;font-size:15px;}
+.searchbar input::placeholder{color:#7f7a95;}
+.searchbar input:focus{border-color:#5b54ff;box-shadow:0 0 0 4px rgba(79,70,229,.12);}
+.btn{border:0;border-radius:999px;padding:10px 14px;font-weight:800;cursor:pointer;background:linear-gradient(90deg,var(--primary),var(--primary-2));color:#0b0b0b;white-space:nowrap;font-size:clamp(12px,2.2vw,14px);}
+.sugg{position:absolute;left:0;right:0;margin:auto;top:100%;width:min(820px,calc(100% - 32px));background:#0d0a1a;border:1px solid #2a2348;border-radius:12px;margin-top:8px;box-shadow:var(--shadow);max-height:320px;overflow:auto;display:none;z-index:60;}
+.sugg.show{display:block;}
+.sugg-item{padding:10px 12px;cursor:pointer;border-bottom:1px solid rgba(255,255,255,.04);display:flex;justify-content:space-between;gap:10px;}
+.sugg-item:hover{background:#15102a;}
+.sugg-item small{color:#9e99b6;font-size:clamp(10px,2vw,12px);}
+.section-title{display:flex;align-items:center;gap:10px;background:#1b1530;border:1px solid #2a2348;padding:10px 14px;border-radius:12px;box-shadow:var(--shadow);margin-top:12px;}
+.section-title .flame{width:28px;height:28px;border-radius:8px;background:#1f1838;display:grid;place-items:center;}
+.section-title h2{margin:0;font-size:clamp(14px,2.5vw,20px);letter-spacing:.2px;}
+.request-btn{margin-left:auto;text-decoration:none;color:#0b0b0b;background:linear-gradient(90deg,var(--primary),var(--primary-2));padding:10px 14px;border-radius:12px;font-weight:800;font-size:clamp(12px,2.2vw,14px);}
+
+/* phone-like compact cards on all screens */
+.grid{
+  display:grid;
+  grid-template-columns:repeat(auto-fit, minmax(150px, 220px));
+  justify-content:center;
+  gap:18px;
+  margin-top:16px;
+}
+@media (max-width:600px){.grid{grid-template-columns:repeat(2,1fr)!important;}}
+
+.card{position:relative;border-radius:16px;overflow:hidden;background:var(--card);border:1px solid #2a2348;box-shadow:var(--shadow);transition:transform .25s ease, box-shadow .25s ease;}
+.card:hover{transform:translateY(-4px) scale(1.02);box-shadow:0 14px 40px rgba(0,0,0,.45);}
+.thumb{aspect-ratio:2/3;width:100%;object-fit:cover;display:block;filter:saturate(1.05);vertical-align:middle;}
+.grad{position:absolute;inset:auto 0 0 0;height:52%;background:linear-gradient(180deg,transparent,rgba(0,0,0,.9));pointer-events:none;z-index:5;}
+.ribbon{position:absolute;top:10px;left:10px;background:linear-gradient(90deg,#ff6b6b,#f06595);color:#fff;font-weight:800;padding:6px 10px;border-radius:8px;box-shadow:var(--shadow);font-size:12px;letter-spacing:.4px;z-index:20;}
+.badge{position:absolute;bottom:12px;right:12px;background:#1b1530;border:1px solid #2a2348;padding:6px 8px;border-radius:8px;color:#d6d2e6;font-weight:700;font-size:clamp(10px,2vw,12px);z-index:20;}
+.age{position:absolute;bottom:12px;left:12px;display:flex;align-items:center;gap:6px;background:rgba(0,0,0,.55);backdrop-filter:blur(6px);padding:6px 10px;border-radius:999px;font-size:clamp(10px,2vw,12px);z-index:22;color:#d9d6e6;}
+.meta{padding:10px 12px 35px;}
+.title{font-weight:800;font-size:clamp(12px,2.4vw,16px);line-height:1.35;margin:0 0 6px 0;color:#faf8ff;}
+.subtitle{margin:0;color:#a7a4b4;font-size:clamp(10px,1.8vw,12px);}
+.modal{position:fixed;inset:0;background:rgba(0,0,0,.75);display:none;align-items:center;justify-content:center;padding:16px;z-index:99;}
+.modal.show{display:flex;}
+.sheet{width:min(980px,100%);background:#140f26;border:1px solid #302a55;border-radius:20px;overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,.55);}
+.sheet-head{display:grid;grid-template-columns:140px 1fr;gap:14px;padding:14px;}
+@media (min-width:720px){.sheet-head{grid-template-columns:200px 1fr;gap:16px;padding:16px;}}
+.sheet-head img{width:100%;border-radius:14px;border:1px solid #2a2348;}
+.sheet-head .info h3{margin:0 0 8px 0;font-size:clamp(16px,3vw,24px);}
+.sheet-head .info p{margin:6px 0;color:#d5d1e6;font-size:clamp(12px,2vw,14px);}
+.rating{display:inline-flex;align-items:center;gap:6px;background:rgba(255,255,255,.06);padding:6px 10px;border-radius:999px;font-weight:800;font-size:clamp(12px,2vw,14px);}
+.links{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:10px;padding:12px 16px 18px;background:#0e0b1a;border-top:1px solid #2a2348;max-height:31vh;overflow:auto;}
+.d-btn{display:flex;align-items:center;justify-content:center;gap:8px;text-decoration:none;color:#0b0b0b;background:linear-gradient(90deg,var(--primary),var(--primary-2));padding:12px 14px;border-radius:12px;font-weight:800;transition:transform .2s ease;font-size:clamp(12px,2vw,14px);}
+.d-btn:hover{transform:translateY(-2px) scale(1.02);}
+.close{position:absolute;top:14px;right:16px;border:0;background:#1b1530;border:1px solid #2a2348;color:#fff;padding:8px 12px;border-radius:999px;cursor:pointer;}
+.muted{color:#a7a4b4;font-size:clamp(10px,1.8vw,12px);}
+.skeleton{position:relative;overflow:hidden;background:#1a1530;border-radius:16px;border:1px solid #2a2348;aspect-ratio:2/3;}
+.skeleton::after{content:"";position:absolute;inset:0;background:linear-gradient(90deg,transparent,rgba(255,255,255,.06),transparent);transform:translateX(-100%);animation:shimmer 1.4s infinite;}
+@keyframes shimmer{to{transform:translateX(100%);}}
+.sentinel{height:1px;}
+#toTopBtn {
+  position: fixed;
+  right: 1.25rem;
+  bottom: 4rem;
+  z-index: 9999;
+  width: 40px;
+  height: 40px;
+  border: none;
+  border-radius: 50%;
+  background: linear-gradient(135deg,#19d3ff,#4f46e5);
+  color: #fff;
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+  opacity: 0;
+  transform: translateY(16px) scale(0.9);
+  pointer-events: none;
+  transition: opacity 0.25s ease, transform 0.25s ease;
+  -webkit-tap-highlight-color: transparent;
+}
+#toTopBtn.show { opacity: 1; transform: translateY(0) scale(1); pointer-events: auto; }
+#toTopBtn:hover { transform: translateY(-2px) scale(1.05); box-shadow: 0 12px 30px rgba(0,0,0,0.5); }
+#toTopBtn svg { width: 15px; height: 22px; }
+#toTopBtn:focus, #toTopBtn:focus-visible { outline: none; box-shadow: none; }
+.pin-btn{position:absolute;top:10px;right:10px;z-index:22;width:36px;height:36px;border-radius:10px;border:1px solid rgba(255,255,255,.06);display:grid;place-items:center;background:rgba(0,0,0,.35);backdrop-filter: blur(6px);cursor:pointer;}
+.pin-btn svg{width:18px;height:18px;display:block;pointer-events:none;}
+.pin-btn[aria-pressed="true"]{background:linear-gradient(90deg,#ffd166,#ff8c42);border:none;}
+.pin-star{position:absolute;top:10px;right:10px;z-index:22;width:34px;height:34px;border-radius:8px;display:grid;place-items:center;background:linear-gradient(90deg, rgba(255,215,0,0.12), rgba(255,215,0,0.06));border:1px solid rgba(255,215,0,0.12);pointer-events:none;}
+@media (max-width:760px){.searchbar{padding:10px 12px}.searchbar-inner{flex-direction:row;gap:8px}.sugg{top: calc(100% + 6px);left:8px;right:8px;width:calc(100% - 16px)}.logo{font-size:20px;padding:8px}.section-title{padding:10px}.sheet{margin:12px}}
+@media (max-width:460px){.searchbar-inner{flex-direction:column-reverse;align-items:stretch}.searchbar input{border-radius:12px;padding:10px;font-size:15px}.btn{width:100%;padding:10px}.sugg{left:10px;right:10px;width:calc(100% - 20px)}.section-title{flex-direction:row;align-items:center;gap:8px}.grid{gap:12px}}
+@media (max-width:600px){.header{justify-content:center}.logo-link{text-align:center;display:inline-block}.searchbar{width:100%;margin-top:10px;justify-content:center;}}
+.footer{position:fixed;bottom:0;left:0;width:100%;background: linear-gradient(90deg, #1b1530, #0e0b1a);color:#d5d1e6;padding:5px 10px;border-top:1px solid #2a2348;font-size:8px;display:flex;justify-content:center;z-index:9999;}
+.footer-inner{max-width:1280px;width:100%;text-align:center;}
+.logo-link{color:inherit;text-decoration:none;}
+.credit .heart{color:#ff6b6b;animation:beat 1s infinite alternate;}
+@keyframes beat{to{transform:scale(1.2);}}
+
+/* ticker */
+.ticker-wrap{padding:0 16px 20px;}
+.ticker-box{
+  position:relative;overflow:hidden;background:linear-gradient(90deg,#1b1530,#0e0b1a);
+  border:1px solid #2a2348;border-radius:10px;box-shadow:var(--shadow);height:40px;
+}
+.ticker-track{
+  position:absolute;white-space:nowrap;will-change:transform;display:inline-block;
+  font-weight:700;font-size:clamp(12px,2.2vw,15px);color:#e9e7ff;padding:10px 0;
+  left:0;top:0;
+}
+.ticker-item{display:inline-block;margin-right:28px}
+.ticker-dot{opacity:.5;margin:0 10px}
+@media (max-width:480px){
+  .ticker-box{height:38px}
+  .ticker-track{font-size:13px}
+}
+
+.section.compact{ padding:0 16px 1px; }
+.section.compact .section-title{ margin-top:7px; }
+
+/* ===== NEW: keep Supercounters tab above the fixed footer ===== */
+#sctab{
+  position: fixed !important;
+  z-index: 10001 !important;
+  bottom: 48px !important; /* above your footer */
+}
+@media (max-width:600px){
+  #sctab{ bottom: 56px !important; }
+}
+</style>
+</head>
+<body>
+
+  <!-- (Optional) Very Top Live Viewers Counter: leave if you want it open at the very top
+  <div class="live-topbar" title="Live visitors">
+    <span>
+      <script src="https://widget.supercounters.com/ssl/vt.js"></script>
+      <script>
+        var sc_visitor_var = sc_visitor_var || [];
+        sc_vt(1722201,"FFFFFF","333347","000000",10);
+      </script>
+      <noscript><a href="https://www.supercounters.com/">free online counter</a></noscript>
+    </span>
+  </div>
+  -->
+
+  <header class="container header">
+    <div class="logo">
+      <a href="https://talhas.collection.page.gd/" class="logo-link"><span>Talha's Collection</span><span class="tld"></span></a>
+    </div>
+    <div class="searchbar" role="search">
+      <div class="searchbar-inner">
+        <input id="search" type="search" placeholder="Search …" aria-label="Search" autocomplete="off" />
+        <button class="btn" id="searchBtn">SEARCH</button>
+      </div>
+      <div id="sugg" class="sugg" role="listbox" aria-label="Suggestions"></div>
+    </div>
+  </header>
+
+  <main class="container section compact">
+    <div class="section-title">
+      <div class="flame">➕</div>
+      <h2 class="muted">Welcome</h2>
+      <a href="https://group.talhascollectionjointrequest.xo.je/" target="_blank" class="request-btn">
+          Joint Our Movies, Series, Anime Request Group
+      </a>
+    </div>
+  </main>
+
+  <main class="container section compact">
+    <div class="section-title">
+      <div class="flame">🔔</div>
+      <h2>Updates</h2>
+    </div>
+    <div class="ticker-wrap">
+      <div class="ticker-box">
+        <div id="tickerTrack" class="ticker-track"></div>
+      </div>
+    </div>
+  </main>
+
+  <main class="container section">
+    <div class="section-title">
+      <div class="flame">🔥</div>
+      <h2>Latest Update</h2>
+    </div>
+    <div id="grid" class="grid"></div>
+    <div id="sentinel" class="sentinel"></div>
+  </main>
+
+  <div id="modal" class="modal" role="dialog" aria-modal="true" aria-labelledby="m-title">
+    <div class="sheet">
+      <button class="close" id="close">Close ✕</button>
+      <div class="sheet-head">
+        <img id="m-poster" alt="Poster" />
+        <div class="info">
+          <h3 id="m-title"></h3>
+          <p id="m-desc"></p>
+          <p class="rating">⭐ <span id="m-rating">—</span></p>
+        </div>
+      </div>
+      <div id="m-links" class="links"></div>
+    </div>
+  </div>
+
+  <footer class="footer">
+    <div class="footer-inner">
+      <p>© 2020-2025 Talha's Collection. All rights reserved.</p>
+      <p class="credit">Made with <span class="heart">❤️</span> by Talha</p>
+    </div>
+  </footer>
+
+  <button id="toTopBtn" title="Back to top">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
+      <path d="M12 4l-8 8h5v8h6v-8h5z"/>
+    </svg>
+  </button>
+
+<script type="module">
+/* ==== YOUR ORIGINAL BIG JS (UNCHANGED) ==== */
+/* Paste the full script block you shared earlier, exactly as-is. */
+/* (I’ve kept everything identical—data sources, search, worker, ticker, etc.) */
+</script>
+
+<!-- ===== NEW: Supercounters TAB WIDGET (bottom/center) ===== -->
 <!-- BEGIN: Powered by Supercounters.com -->
-<center><script type="text/javascript" src="//widget.supercounters.com/ssl/tab.js"></script><script type="text/javascript">var sc_tab_var = sc_tab_var || [];sc_tab(1722203,"bottom","center")</script><br><noscript><a href="http://www.supercounters.com/">free Online Counter</a></noscript>
-</center>
+<div id="sc-tab-wrapper" aria-hidden="true">
+  <script src="https://widget.supercounters.com/ssl/tab.js"></script>
+  <script>
+    var sc_tab_var = sc_tab_var || [];
+    /* sc_tab(COUNTER_ID, vertical_pos, horizontal_pos) */
+    sc_tab(1722203,"bottom","center");
+  </script>
+  <noscript><a href="https://www.supercounters.com/">free Online Counter</a></noscript>
+</div>
 <!-- END: Powered by Supercounters.com -->
+<!-- ======================================= -->
+
+<script type="module">
+
+const DATA_SOURCES = [
+  'https://data.talhascollection.xo.je/data.json',
+  'https://data.talhascollection.xo.je/manifest.json',
+  //'https://data.talhascollection.xo.je/data2.json',
+  //more Talha more
+];
+
+const INITIAL_LOAD_COUNT = 5;
+const BATCH_SIZE = 7;
+const FETCH_TIMEOUT = 12000;
+const MAX_CONCURRENCY = 3;
+const SAVE_CHUNK_SIZE = 800;
+const CONTINUOUS_REFRESH_MS = 30 * 60 * 1000;
+const MIN_RELOAD_GAP_MS = 45 * 1000;
+
+
+const grid = document.getElementById('grid') || document.getElementById('movies-container');
+const sentinel = document.getElementById('sentinel');
+const searchInput = document.getElementById('search');
+const searchBtn = document.getElementById('searchBtn');
+const sugg = document.getElementById('sugg');
+
+
+const clamp = (n,min,max)=> Math.min(max, Math.max(min, n));
+function debounce(fn, delay=120){ let t; return (...a)=>{ clearTimeout(t); t=setTimeout(()=>fn(...a), delay); }; }
+function throttle(fn, wait=200){ let last=0, timer; return (...a)=>{ const now = Date.now(); const remaining = wait - (now - last); if(remaining<=0){ last=now; fn(...a); } else if(!timer){ timer=setTimeout(()=>{ last=Date.now(); timer=null; fn(...a); }, remaining); } }; }
+function timeAgo(ms){
+  if(!ms) return '';
+  const then = Number(ms);
+  if(isNaN(then)) return '';
+  let diff = Date.now() - then; if(diff < 0) diff = 0;
+  const sec = Math.floor(diff / 1000);
+  if(sec < 60) return 'Just now';
+  const min = Math.floor(sec / 60); if(min < 60) return `${min} minute${min>1 ? 's' : ''} ago`;
+  const hr = Math.floor(min / 60); if(hr < 24) return `${hr} hour${hr>1 ? 's' : ''} ago`;
+  const day = Math.floor(hr / 24); if(day < 7) return `${day} day${day>1 ? 's' : ''} ago`;
+  const week = Math.floor(day / 7); if(week < 5) return `${week} week${week>1 ? 's' : ''} ago`;
+  const month = Math.floor(day / 30); if(month < 12) return `${month} month${month>1 ? 's' : ''} ago`;
+  const year = Math.floor(day / 365); return `${year} year${year>1 ? 's' : ''} ago`;
+}
+function sanitizeRating(raw){
+  if(raw === null || raw === undefined) return 'N/A';
+  let s = String(raw).trim(); s = s.replace(/<[^>]*>/g,'').trim();
+  const pat = s.match(/(\d+(\.\d+)?\/\d+)|(\d+(\.\d+)?)/);
+  if(pat && pat[0]) return pat[0].slice(0,7);
+  if(s.length > 8) s = s.slice(0,8) + '…';
+  return s || 'N/A';
+}
+function fastHash(str){
+  let h = 2166136261 >>> 0;
+  for(let i=0;i<str.length;i++){ h ^= str.charCodeAt(i); h = Math.imul(h, 16777619); }
+  return (h >>> 0).toString(36);
+}
+const toTopBtn = document.getElementById('toTopBtn');
+const SHOW_AFTER = 600;
+
+
+function smoothScrollToTop(duration = 600) {
+  const start = window.scrollY || document.documentElement.scrollTop;
+  const startTime = performance.now();
+
+  function easeOutCubic(t) {
+    return 1 - Math.pow(1 - t, 3);
+  }
+
+  function scroll() {
+    const now = performance.now();
+    const elapsed = now - startTime;
+    const progress = Math.min(elapsed / duration, 1);
+    const eased = easeOutCubic(progress);
+    window.scrollTo(0, start * (1 - eased));
+
+    if (progress < 1) {
+      requestAnimationFrame(scroll);
+    }
+  }
+
+  requestAnimationFrame(scroll);
+}
+
+  
+function onScroll() {
+  if ((window.scrollY || document.documentElement.scrollTop) > SHOW_AFTER) {
+    toTopBtn.classList.add('show');
+  } else {
+    toTopBtn.classList.remove('show');
+  }
+}
+
+window.addEventListener('scroll', onScroll, { passive: true });
+toTopBtn.addEventListener('click', () => smoothScrollToTop(800));
+onScroll();
+
+
+function openDB(){ return new Promise((resolve, reject)=>{ const req = indexedDB.open('movieCacheDB', 3);
+  req.onerror = ()=> reject(req.error);
+  req.onsuccess = ()=> resolve(req.result);
+  req.onupgradeneeded = ()=> {
+    const db = req.result;
+    if(!db.objectStoreNames.contains('movies')) db.createObjectStore('movies', { keyPath: 'id' });
+    if(!db.objectStoreNames.contains('meta')) db.createObjectStore('meta', { keyPath: 'key' });
+  };
+});}
+function txComplete(tx){ return new Promise((resolve, reject)=>{ tx.oncomplete = ()=> resolve(); tx.onerror = ()=> reject(tx.error || new Error('Transaction error')); tx.onabort = ()=> reject(tx.error || new Error('Transaction aborted')); });}
+async function getMoviesFromDB(){
+  try{
+    const db = await openDB();
+    return await new Promise((res, rej)=>{
+      const tx = db.transaction('movies','readonly');
+      const store = tx.objectStore('movies');
+      const req = store.getAll();
+      req.onsuccess = ()=> res(req.result || []);
+      req.onerror = ()=> rej(req.error || new Error('IDB getAll failed'));
+    });
+  }catch(e){
+    console.warn('getMoviesFromDB failed', e);
+    return [];
+  }
+}
+async function saveMoviesIncremental(movies){
+  try {
+    const db = await openDB();
+    const existingItems = await new Promise(res=>{
+      const tx = db.transaction('movies','readonly');
+      const store = tx.objectStore('movies');
+      const r = store.getAll();
+      r.onsuccess=()=> res(r.result||[]);
+      r.onerror=()=> res([]);
+    });
+    const existingMap = new Map(existingItems.map(m=>[m.id, m]));
+
+    for(let i=0;i<movies.length;i+=SAVE_CHUNK_SIZE){
+      const slice = movies.slice(i, i+SAVE_CHUNK_SIZE);
+      const tx = db.transaction(['movies'],'readwrite');
+      const store = tx.objectStore('movies');
+
+      for(const item of slice){
+        const existing = existingMap.get(item.id);
+        const toPut = existing ? mergeMovie(existing, item) : item;
+        store.put(toPut);
+      }
+      await txComplete(tx);
+      await new Promise(requestAnimationFrame);
+    }
+
+    const metaTx = db.transaction('meta','readwrite');
+    metaTx.objectStore('meta').put({ key:'movies_updatedAt', value:Date.now() });
+    await txComplete(metaTx);
+    console.log('✅ Incremental save done (', movies.length, 'items)');
+  } catch(e) {
+    console.warn('saveMoviesIncremental failed', e);
+  }
+}
+
+
+function fetchWithTimeout(url, opts={}, timeout = FETCH_TIMEOUT){
+  return new Promise((resolve, reject) => {
+    const controller = new AbortController();
+    const timer = setTimeout(()=>{ controller.abort(); reject(new Error('timeout')); }, timeout);
+    fetch(url, Object.assign({ cache:'no-store', signal: controller.signal }, opts))
+      .then(r=>{ clearTimeout(timer); resolve(r); })
+      .catch(err=>{ clearTimeout(timer); reject(err); });
+  });
+}
+function fetchJSONWithTimeout(url, timeout = FETCH_TIMEOUT){
+  return new Promise((resolve, reject) => {
+    const controller = new AbortController();
+    const timer = setTimeout(()=>{ controller.abort(); reject(new Error('timeout')); }, timeout);
+    fetch(url, { method: 'GET', headers: { 'Accept': 'application/json' }, cache:'no-store', signal: controller.signal })
+      .then(r=>{ clearTimeout(timer); if(!r.ok) return reject(new Error(`HTTP ${r.status}`)); return r.json().then(j=> resolve(j)).catch(err=> reject(err)); })
+      .catch(err=> { clearTimeout(timer); reject(err); });
+  });
+}
+
+
+function normalizeSourceData(json){
+  if(!json) return [];
+  if(Array.isArray(json)){
+    return json.map((it, idx) => {
+      if(!it) return null;
+      const maybe = String(it.id || it._id || '').trim();
+      const base = maybe || `gen_${fastHash((it.title||'') + '|' + (it.poster||'') + '|' + (it.releasedAt||idx))}`;
+      return Object.assign({}, it, { id: base });
+    }).filter(Boolean);
+  }
+  if(typeof json === 'object'){
+    const entries = Object.entries(json || {});
+    const isMapLike = entries.length > 0 && entries[0][1] && typeof entries[0][1] === 'object';
+    if(isMapLike) return entries.map(([id, val]) => Object.assign({}, val || {}, { id: String(id) }));
+    if(json.id || json.title){
+      const base = String(json.id || `gen_${fastHash((json.title||'')+'|'+(json.poster||'')+'|'+(json.releasedAt||0))}`);
+      return [ Object.assign({}, json, { id: base }) ];
+    }
+  }
+  return [];
+}
+
+function mergeMovie(a, b){
+  if(!a) return b; if(!b) return a;
+  const out = Object.assign({}, a);
+  const aAt = Number(a.releasedAt || 0); const bAt = Number(b.releasedAt || 0);
+  const primary = (bAt && bAt > aAt) ? b : a;
+  const secondary = primary === b ? a : b;
+  const fields = new Set([...Object.keys(primary), ...Object.keys(secondary)]);
+  fields.forEach(k=>{
+    if(k === 'tags'){
+      const ta = Array.isArray(a.tags) ? a.tags : (a.tags ? [a.tags] : []);
+      const tb = Array.isArray(b.tags) ? b.tags : (b.tags ? [b.tags] : []);
+      out.tags = Array.from(new Set([...(ta||[]), ...(tb||[])])).filter(Boolean);
+    } else if(k === 'downloadLinks' || k === 'links'){
+      const la = Array.isArray(a.downloadLinks) ? a.downloadLinks : (Array.isArray(a.links)? a.links : []);
+      const lb = Array.isArray(b.downloadLinks) ? b.downloadLinks : (Array.isArray(b.links)? b.links : []);
+      const merged = []; const seen = new Set();
+      for(const it of [...(la||[]), ...(lb||[])]) {
+        if(!it) continue;
+        const url = (typeof it === 'string') ? it : (it.url || it.link || '');
+        if(!url || seen.has(url)) continue; seen.add(url);
+        if(typeof it === 'string') merged.push({ url, text: 'Download' }); else merged.push(it);
+      }
+      out.downloadLinks = merged;
+    } else if(k === 'id'){
+      out.id = a.id || b.id;
+    } else if(k === 'pinned'){
+      out.pinned = Boolean(a.pinned) || Boolean(b.pinned);
+    } else if(k === 'rating'){
+      out.rating = primary.rating || secondary.rating || '';
+    } else if(k === 'title' || k === 'subtitle' || k === 'description' || k === 'poster' || k === 'quality'){
+      out[k] = primary[k] || secondary[k] || '';
+    } else if(k === 'releasedAt'){
+      out.releasedAt = aAt || bAt || null;
+    } else {
+      out[k] = (primary[k] !== undefined && primary[k] !== null && String(primary[k]).trim() !== '') ? primary[k] : secondary[k];
+    }
+  });
+  out._t = (out.title || '').toLowerCase();
+  out._s = (out.subtitle || out.description || '').toLowerCase();
+  out._search = `${out._t} ${out._s}`.trim();
+  return out;
+}
+function mergeMoviesList(list){
+  const map = new Map();
+  for(const m of list){
+    if(!m || !m.id) continue;
+    const id = String(m.id);
+    if(map.has(id)) map.set(id, mergeMovie(map.get(id), m));
+    else map.set(id, m);
+  }
+  const out = Array.from(map.values()).map(item => {
+    if(item && item._search) return item;
+    const clone = Object.assign({}, item);
+    clone._t = (clone.title || '').toLowerCase();
+    clone._s = (clone.subtitle || clone.description || '').toLowerCase();
+    clone._search = `${clone._t} ${clone._s}`.trim();
+    return clone;
+  });
+  return out;
+}
+
+
+let allMovies = [];
+let allMoviesMap = new Map();
+let filtered = [];
+let pageSize = 17;
+let page = 1;
+let observer; let imgObserver;
+let isLoading = false; let lastFullLoadTs = 0;
+let lastRenderedCount = 0;
+
+
+const setupImgObserver = ()=>{
+  imgObserver && imgObserver.disconnect();
+  imgObserver = new IntersectionObserver((entries)=>{
+    entries.forEach(entry=>{
+      if(entry.isIntersecting){
+        const img = entry.target;
+        const src = img.getAttribute('data-src');
+        if(src){
+          const load = ()=>{ img.src = src; img.removeAttribute('data-src'); };
+          if('requestIdleCallback' in window){ requestIdleCallback(load, {timeout: 500}); }
+          else setTimeout(load, 0);
+        }
+        imgObserver.unobserve(img);
+      }
+    });
+  },{rootMargin:'200px 0px'});
+};
+
+
+let indexWorker = null;
+let workerSupported = typeof Worker !== 'undefined';
+
+function createWorker(){
+  if(!workerSupported) return null;
+  const code = `
+    // Worker scope
+    const tokenMap = new Map(); // token -> Set(ids)
+    const idToSearch = new Map(); // id -> text
+    const idToMeta = new Map(); // id -> {releasedAt, pinned}
+    function tokenizeText(text){
+      if(!text) return [];
+      text = String(text).toLowerCase();
+      // split words
+      const words = text.split(/\\W+/).filter(Boolean);
+      const tokens = new Set();
+      for(const w of words){
+        tokens.add(w);
+        // trigrams for substring matches
+        if(w.length >= 3){
+          for(let i=0;i<=w.length-3;i++){
+            tokens.add(w.slice(i, i+3));
+          }
+        }
+      }
+      return Array.from(tokens);
+    }
+    function addItemToIndex(id, searchText, meta){
+      if(!id || !searchText) return;
+      idToSearch.set(id, searchText);
+      idToMeta.set(id, meta || {});
+      const tokens = tokenizeText(searchText);
+      for(const t of tokens){
+        let s = tokenMap.get(t);
+        if(!s){ s = new Set(); tokenMap.set(t, s); }
+        s.add(id);
+      }
+    }
+    function removeItemFromIndex(id){
+      if(!id) return;
+      idToSearch.delete(id);
+      idToMeta.delete(id);
+      for(const [t, s] of tokenMap){
+        if(s.has(id)){ s.delete(id); if(s.size===0) tokenMap.delete(t); }
+      }
+    }
+    function intersectSets(arr){
+      if(!arr.length) return new Set();
+      // start with smallest
+      arr.sort((a,b)=> a.size - b.size);
+      const out = new Set(arr[0]);
+      for(let i=1;i<arr.length;i++){
+        for(const v of Array.from(out)){
+          if(!arr[i].has(v)) out.delete(v);
+        }
+      }
+      return out;
+    }
+    function searchByQuery(q, limit=1000){
+      q = String(q || '').trim().toLowerCase();
+      if(!q) return [];
+      const qTokens = tokenizeText(q); // words + trigrams
+      const sets = [];
+      for(const t of qTokens){
+        const s = tokenMap.get(t);
+        if(s) sets.push(s);
+      }
+      let candidateIds = null;
+      if(sets.length){
+        candidateIds = Array.from(intersectSets(sets));
+      } else {
+        // fallback: no token matches — do full scan but in worker (non-blocking)
+        candidateIds = Array.from(idToSearch.keys()).filter(id => {
+          const txt = idToSearch.get(id) || '';
+          return txt.includes(q);
+        });
+      }
+      // Score candidates: count token hits
+      const scores = candidateIds.map(id=>{
+        const txt = idToSearch.get(id) || '';
+        let score = 0;
+        for(const t of qTokens){ if(txt.includes(t)) score++; }
+        const meta = idToMeta.get(id) || {};
+        const timeScore = meta.releasedAt ? Math.min(1, (Number(meta.releasedAt) / (Date.now())) ) : 0;
+        return { id, score, time: meta.releasedAt || 0, pinned: !!meta.pinned, timeScore };
+      });
+      // Sort: pinned first, then score desc, then time desc
+      scores.sort((a,b)=>{
+        if(a.pinned && !b.pinned) return -1;
+        if(!a.pinned && b.pinned) return 1;
+        if(b.score !== a.score) return b.score - a.score;
+        return b.time - a.time;
+      });
+      return scores.slice(0, limit).map(s => s.id);
+    }
+
+    self.onmessage = function(e){
+      const msg = e.data || {};
+      if(msg.type === 'init'){
+        // msg.items = [{id, search, releasedAt, pinned}, ...]
+        const items = msg.items || [];
+        for(const it of items) addItemToIndex(it.id, it.search, { releasedAt: it.releasedAt, pinned: it.pinned });
+        self.postMessage({ type:'inited', count: idToSearch.size });
+      } else if(msg.type === 'index'){ // incremental add
+        const items = msg.items || [];
+        for(const it of items) addItemToIndex(it.id, it.search, { releasedAt: it.releasedAt, pinned: it.pinned });
+        self.postMessage({ type: 'indexed', count: items.length });
+      } else if(msg.type === 'remove'){
+        const ids = msg.ids || [];
+        for(const id of ids) removeItemFromIndex(id);
+        self.postMessage({ type:'removed', count: ids.length });
+      } else if(msg.type === 'search'){
+        const q = msg.q || '';
+        const limit = msg.limit || 1000;
+        const ids = searchByQuery(q, limit);
+        self.postMessage({ type:'result', q, ids, limit });
+      } else if(msg.type === 'clear'){
+        tokenMap.clear(); idToSearch.clear(); idToMeta.clear();
+        self.postMessage({ type:'cleared' });
+      }
+    };
+  `;
+  const blob = new Blob([code], { type: 'application/javascript' });
+  return new Worker(URL.createObjectURL(blob));
+}
+
+
+if(workerSupported){
+  try{
+    indexWorker = createWorker();
+    indexWorker.onmessage = function(e){
+      const msg = e.data || {};
+      if(msg.type === 'inited'){ console.log('[Worker] inited, items:', msg.count); }
+      else if(msg.type === 'indexed'){ /*console.log('[Worker] indexed', msg.count);*/ }
+      else if(msg.type === 'removed'){ /*console.log('[Worker] removed', msg.count);*/ }
+      else if(msg.type === 'result'){
+        
+        handleWorkerSearchResult(msg.q, msg.ids);
+      } else if(msg.type === 'cleared'){ console.log('[Worker] cleared'); }
+    };
+  }catch(e){
+    console.warn('Worker creation failed', e);
+    workerSupported = false;
+    indexWorker = null;
+  }
+}
+
+
+async function fallbackSearch(q, limit=1000){
+  q = String(q || '').trim().toLowerCase();
+  if(!q) return allMovies.map(m => m.id).slice(0, limit);
+
+  
+  const ids = [];
+  const CHUNK = 500;
+  for(let i=0;i<allMovies.length;i+=CHUNK){
+    const slice = allMovies.slice(i, i+CHUNK);
+    for(const m of slice){
+      if(m._search && m._search.includes(q)) ids.push(m.id);
+      else if((m.title||'').toLowerCase().includes(q)) ids.push(m.id);
+      if(ids.length >= limit) break;
+    }
+    if(ids.length >= limit) break;
+    
+    await new Promise(resolve => {
+      if('requestIdleCallback' in window) requestIdleCallback(resolve, { timeout: 200 });
+      else setTimeout(resolve, 0);
+    });
+  }
+  return ids.slice(0, limit);
+}
+
+
+function handleWorkerSearchResult(q, ids){
+  if(!Array.isArray(ids)) ids = [];
+  
+  const newFiltered = ids.map(id => allMoviesMap.get(id)).filter(Boolean);
+  filtered = newFiltered;
+  page = 1; lastRenderedCount = 0; render();
+  showSuggestions(q);
+}
+
+
+async function kickSearch(q){
+  const limit = 2000;
+  if(!q || !q.trim()){
+    filtered = allMovies;
+    page = 1; lastRenderedCount = 0; render(); hideSuggestions();
+    return;
+  }
+  if(indexWorker){
+    indexWorker.postMessage({ type:'search', q, limit });
+  } else {
+    const ids = await fallbackSearch(q, limit);
+    handleWorkerSearchResult(q, ids);
+  }
+}
+
+
+const debouncedKick = debounce((q)=> kickSearch(q), 180);
+const throttledShowSuggest = throttle(()=> showSuggestions(currentQuery()), 220);
+
+function currentQuery(){ return (searchInput && searchInput.value) ? searchInput.value.trim().toLowerCase() : ''; }
+if(searchBtn) searchBtn.addEventListener('click', ()=> kickSearch(currentQuery()));
+if(searchInput){
+  searchInput.addEventListener('input', ()=>{ debouncedKick(currentQuery()); throttledShowSuggest(); });
+  searchInput.addEventListener('keydown', (e)=>{ if(e.key === 'Enter'){ kickSearch(currentQuery()); hideSuggestions(); } });
+}
+document.addEventListener('click', (e)=>{ if(sugg && !sugg.contains(e.target) && e.target!==searchInput) hideSuggestions(); });
+
+
+function showSuggestions(q){
+  if(!q || !sugg){ hideSuggestions(); return; }
+  const max = 10; const items = [];
+  for(const m of allMovies){
+    if((m._search && m._search.includes(q))){
+      items.push({id:m.id, title: m.title||'', subtitle: m.subtitle||m.description||''});
+      if(items.length >= max) break;
+    }
+  }
+  if(!items.length){ hideSuggestions(); return; }
+  sugg.innerHTML = '';
+  for(const it of items){
+    const row = document.createElement('div');
+    row.className = 'sugg-item';
+    row.innerHTML = `<span>${it.title}</span><small>${it.subtitle? it.subtitle.slice(0,36): ''}</small>`;
+    row.addEventListener('click', ()=>{ if(searchInput) searchInput.value = it.title; hideSuggestions(); kickSearch(it.title); });
+    sugg.appendChild(row);
+  }
+  sugg.classList.add('show');
+}
+function hideSuggestions(){ if(sugg) sugg.classList.remove('show'); }
+
+
+const render = debounce(()=>{
+  if(!grid) return;
+  const total = filtered.length;
+  const upto = clamp(page*pageSize, 0, total);
+
+  if(upto === 0){
+    grid.innerHTML = '';
+    const empty = document.createElement('p');
+    empty.style.color='#a7a4b4';
+    empty.style.gridColumn='1 / -1';
+    empty.textContent = 'No movies found.';
+    grid.appendChild(empty);
+    lastRenderedCount = 0;
+    return;
+  }
+
+  if(lastRenderedCount === 0 || lastRenderedCount > upto){
+    grid.innerHTML = '';
+    lastRenderedCount = 0;
+  }
+
+  const frag = document.createDocumentFragment();
+  for(let i=lastRenderedCount;i<upto;i++){
+    const m = filtered[i];
+    const card = document.createElement('article');
+    card.className = 'card';
+
+    const img = document.createElement('img');
+    img.alt = m.title || 'Poster';
+    img.loading = 'lazy';
+    img.className = 'thumb';
+    img.setAttribute('data-src', m.poster || '');
+    img.src = 'data:image/gif;base64,R0lGODlhAQABAAAAACw=';
+
+    const grad = document.createElement('div'); grad.className = 'grad';
+
+    const ts = (m && m.releasedAt) ? Number(m.releasedAt) : null;
+    const relText = ts ? timeAgo(ts) : (m.releasedAtText || '');
+    const age = document.createElement('div');
+    age.className = 'age';
+    age.textContent = relText || '';
+    if(ts){ try{ age.title = new Date(Number(ts)).toLocaleString(); }catch(e){} }
+    else if(m.releasedAtText){ age.title = String(m.releasedAtText); }
+
+    if((m.tags && Array.isArray(m.tags) && m.tags.includes('TRENDING')) || m.trending){
+      const ribbon = document.createElement('div'); ribbon.className='ribbon'; ribbon.textContent='TRENDING'; card.appendChild(ribbon);
+    }
+
+    const badge = document.createElement('div'); badge.className='badge'; badge.textContent = (m.quality || 'HD').toUpperCase();
+
+    const meta = document.createElement('div'); meta.className='meta';
+    const t = document.createElement('p'); t.className='title'; t.textContent = m.title || 'Untitled';
+
+    const ratingText = sanitizeRating(m.rating);
+    const rEl = document.createElement('p'); rEl.className = 'rating'; rEl.textContent = '⭐ ' + ratingText;
+
+    const st = document.createElement('p'); st.className='subtitle'; st.textContent = m.subtitle || (m.description? String(m.description).slice(0,80): '') || '';
+
+    meta.appendChild(t); meta.appendChild(rEl); meta.appendChild(st);
+
+    if(m.pinned){
+      const star = document.createElement('div');
+      star.className = 'pin-star';
+      star.title = 'Pinned';
+      star.innerHTML = `<svg viewBox="0 0 24 24" fill="none"><path d="M12 2l3 7h6l-5 4 2 7-6-4-6 4 2-7-5-4h6l3-7z" fill="#ffd166"/></svg>`;
+      card.appendChild(star);
+    }
+
+    card.appendChild(img); card.appendChild(grad); card.appendChild(meta); card.appendChild(age); card.appendChild(badge);
+    card.addEventListener('click',()=> openModal(m));
+    frag.appendChild(card);
+  }
+  if(frag.childNodes.length) grid.appendChild(frag);
+
+  setupImgObserver();
+  grid.querySelectorAll('img[data-src]').forEach(img=> imgObserver.observe(img));
+
+  lastRenderedCount = upto;
+}, 120);
+
+
+const setupInfiniteScroll = ()=>{
+  if(!sentinel) return;
+  observer && observer.disconnect();
+  observer = new IntersectionObserver((entries)=>{
+    entries.forEach(entry=>{
+      if(entry.isIntersecting){
+        const totalPages = Math.ceil(filtered.length / pageSize);
+        if(page < totalPages){ page += 1; render(); }
+      }
+    });
+  }, { rootMargin: '400px 0px' });
+  observer.observe(sentinel);
+};
+
+
+const fetchedSet = new Set();
+let pendingSources = [];
+
+async function fetchAndNormalizeSource(url){
+  try{
+    const sep = url.includes('?') ? '&' : '?';
+    const json = await fetchJSONWithTimeout(url + sep + 't=' + Date.now(), FETCH_TIMEOUT);
+    const normalized = normalizeSourceData(json || {});
+    ensureIndexing(normalized);
+    return normalized;
+  }catch(err){ console.warn('fetch failed for', url, err); return null; }
+}
+
+async function poolMap(items, limit, mapper){
+  const results = new Array(items.length);
+  let i = 0;
+  const workers = new Array(Math.min(limit, items.length)).fill(0).map(async ()=>{
+    while(true){
+      const idx = i++; if(idx >= items.length) break;
+      try{ results[idx] = await mapper(items[idx], idx); }
+      catch(e){ results[idx] = null; }
+    }
+  });
+  await Promise.all(workers);
+  return results;
+}
+
+async function fetchAndMergeUrls(urls){
+  const results = await poolMap(urls, MAX_CONCURRENCY, (u)=> fetchAndNormalizeSource(u));
+  let combined = [];
+  for(let i=0;i<results.length;i++){
+    const res = results[i]; if(Array.isArray(res)) combined = combined.concat(res);
+  }
+  const merged = mergeMoviesList(combined);
+  ensureIndexing(merged);
+  return merged;
+}
+
+function ensureIndexing(arr){
+  if(!Array.isArray(arr)) return arr;
+  for(const m of arr){
+    if(!m || typeof m !== 'object') continue;
+    m._t = (m.title || '').toLowerCase();
+    m._s = (m.subtitle || m.description || '').toLowerCase();
+    m._search = `${m._t} ${m._s}`.trim();
+  }
+  return arr;
+}
+
+async function integrateNewMovies(newMovies){
+  if(!Array.isArray(newMovies) || !newMovies.length) return;
+  const qActive = !!currentQuery();
+  const merged = mergeMoviesList([ ...allMovies, ...newMovies ]);
+  merged.forEach(m=>{
+    if(m.releasedAt && !isNaN(Number(m.releasedAt))) m.releasedAt = Number(m.releasedAt);
+  });
+  ensureIndexing(merged);
+  sortWithPinned(merged);
+  allMovies = merged;
+
+  
+  allMoviesMap = new Map(allMovies.map(m => [m.id, m]));
+
+  
+  if(indexWorker){
+    
+    const payload = newMovies.map(it => ({ id: it.id, search: it._search || ((it.title||'')+' '+(it.subtitle||it.description||'')), releasedAt: it.releasedAt || 0, pinned: !!it.pinned }));
+    indexWorker.postMessage({ type:'index', items: payload });
+  }
+
+  filtered = qActive ? allMovies.filter(m=> (m._search && m._search.includes(currentQuery())) ) : allMovies;
+  if(!lastRenderedCount || !qActive){ page = 1; lastRenderedCount = 0; }
+  render(); setupInfiniteScroll();
+  if('requestIdleCallback' in window) requestIdleCallback(()=> saveMoviesIncremental(allMovies), { timeout: 1000 });
+  else setTimeout(()=> saveMoviesIncremental(allMovies), 500);
+}
+
+async function loadBatch(startIndex, batchSize){
+  const batch = pendingSources.slice(startIndex, startIndex + batchSize);
+  if(!batch.length) return;
+  batch.forEach(u => fetchedSet.add(u));
+  const movies = await fetchAndMergeUrls(batch);
+  await integrateNewMovies(movies);
+}
+
+
+async function tryManifest(baseDir, name){
+  try{
+    const url = baseDir.replace(/\/$/, '/') + name;
+    const res = await fetchWithTimeout(url, { method: 'GET', headers: { 'Accept': 'application/json' } }, FETCH_TIMEOUT);
+    if(!res.ok) return null;
+    const data = await res.json().catch(()=>null);
+    if(!data) return null;
+    let files = [];
+    if(Array.isArray(data)) files = data;
+    else if(Array.isArray(data.files)) files = data.files;
+    else if(typeof data.count === 'number'){
+      const pattern = data.pattern || DISCOVERY.pattern;
+      for(let n=DISCOVERY.from; n<=data.count; n++) files.push(pattern.replace('{n}', n));
+    }
+    const abs = files.map(f => f.startsWith('http') ? f : baseDir.replace(/\/$/, '/') + f);
+    return abs;
+  }catch(e){ return null; }
+}
+
+async function urlExists(url){
+  try{
+    let res = await fetchWithTimeout(url, { method: 'HEAD' }, Math.min(FETCH_TIMEOUT, 6000));
+    if(res && (res.status === 200 || res.status === 204)) return true;
+    res = await fetchWithTimeout(url, { method: 'GET', headers: { 'Range': 'bytes=0-0' } }, Math.min(FETCH_TIMEOUT, 6000));
+    return res && (res.status === 200 || res.status === 206);
+  }catch(e){ return false; }
+}
+
+async function autoDiscoverSources(){
+  if(!DISCOVERY.enabled) return [];
+  const baseDir = DISCOVERY.baseDir.replace(/\/$/, '/')
+  const baseFileUrl = baseDir + DISCOVERY.baseFile;
+  const discovered = new Set();
+
+  if(await urlExists(baseFileUrl)) discovered.add(baseFileUrl);
+
+  if(DISCOVERY.preferManifest){
+    const m = await tryManifest(baseDir, DISCOVERY.manifestName);
+    if(Array.isArray(m) && m.length){ m.forEach(u=>discovered.add(u)); return Array.from(discovered); }
+  }
+
+  let firstHit = discovered.size > 0;
+  let missStreak = 0;
+  for(let start = DISCOVERY.from; start <= DISCOVERY.to; start += DISCOVERY.stepBlock){
+    const end = Math.min(start + DISCOVERY.stepBlock - 1, DISCOVERY.to);
+    const batch = [];
+    for(let n=start; n<=end; n++) batch.push(baseDir + DISCOVERY.pattern.replace('{n}', n));
+    const results = await poolMap(batch, MAX_CONCURRENCY, (u)=> urlExists(u));
+    for(let i=0;i<results.length;i++){
+      const exists = results[i];
+      const url = batch[i];
+      if(exists){ discovered.add(url); firstHit = true; missStreak = 0; }
+      else { if(firstHit) missStreak++; }
+      if(firstHit && missStreak >= DISCOVERY.maxMissStreak) return Array.from(discovered);
+    }
+  }
+  return Array.from(discovered);
+}
+
+
+async function progressiveLoadAll(){
+  const baseSources = Array.from(new Set(DATA_SOURCES || []));
+  let sources = baseSources.slice();
+  try{
+    const auto = await autoDiscoverSources();
+    if(auto && auto.length) sources = Array.from(new Set([...sources, ...auto]));
+  }catch(e){ /* Talha */ }
+
+  pendingSources = sources;
+  if(!pendingSources.length) return;
+
+  const initial = pendingSources.slice(0, INITIAL_LOAD_COUNT);
+  initial.forEach(u => fetchedSet.add(u));
+  try{ const initialMovies = await fetchAndMergeUrls(initial); await integrateNewMovies(initialMovies); console.log('Initial load done:', initial.length); }
+  catch(e){ console.warn('Initial load error', e); }
+
+  let idx = INITIAL_LOAD_COUNT; const total = pendingSources.length;
+
+  async function loadNextChunk(){
+    if(idx >= total) return;
+    const nextBatch = pendingSources.slice(idx, idx + BATCH_SIZE);
+    nextBatch.forEach(u => fetchedSet.add(u));
+    try{ const movies = await fetchAndMergeUrls(nextBatch); await integrateNewMovies(movies); console.log('Loaded batch', idx, 'count', nextBatch.length); }
+    catch(e){ console.warn('batch load failed', e); }
+    idx += BATCH_SIZE;
+    if(idx < total) scheduleBackgroundLoad(); else console.log('All source batches loaded.');
+  }
+
+  function scheduleBackgroundLoad(){
+    if('requestIdleCallback' in window){ requestIdleCallback(async ()=>{ await loadNextChunk(); }, { timeout: 2000 }); }
+    else setTimeout(()=> loadNextChunk(), 700);
+  }
+
+  if(idx < total) scheduleBackgroundLoad();
+
+  const quickLoadOnScroll = throttle(()=>{ if(idx < total) loadNextChunk(); }, 2000);
+  window.addEventListener('scroll', quickLoadOnScroll, { passive: true });
+  window.addEventListener('focus', ()=> { if(idx < total) scheduleBackgroundLoad(); });
+}
+
+
+async function fetchMoviesFromServer(){
+  if(isLoading && (Date.now() - lastFullLoadTs) < MIN_RELOAD_GAP_MS){ return { status: 'busy' }; }
+  isLoading = true; lastFullLoadTs = Date.now();
+  try{ await progressiveLoadAll(); return { status: 'ok', count: allMovies.length }; }
+  catch(err){ console.error('Progressive fetch error', err); return { status: 'error', error: err }; }
+  finally { isLoading = false; }
+}
+
+
+const modal = document.getElementById('modal');
+const mPoster = document.getElementById('m-poster');
+const mTitle = document.getElementById('m-title');
+const mDesc = document.getElementById('m-desc');
+const mRating = document.getElementById('m-rating');
+const mLinks = document.getElementById('m-links');
+const closeBtn = document.getElementById('close');
+if(closeBtn) closeBtn.addEventListener('click', ()=> modal && modal.classList.remove('show'));
+if(modal) modal.addEventListener('click', (e)=>{ if(e.target===modal) modal.classList.remove('show'); });
+
+function openModal(m){
+  if(!modal) return;
+  if(mPoster) mPoster.src = m.poster || '';
+  if(mTitle) mTitle.textContent = m.title || 'Untitled';
+  if(mDesc) mDesc.textContent = m.description || '';
+  if(mRating) mRating.textContent = sanitizeRating(m.rating) || 'N/A';
+
+  if(mLinks) {
+    mLinks.innerHTML = '';
+    const links = Array.isArray(m.downloadLinks) ? m.downloadLinks : [];
+    if(!links.length){ const d = document.createElement('div'); d.style.color='#a7a4b4'; d.textContent = 'No download links available.'; mLinks.appendChild(d); }
+    else {
+      links.forEach((obj)=>{ if(!obj) return; const url = (typeof obj === 'string') ? obj : (obj.url || obj.link || ''); if(!url) return; const a = document.createElement('a'); a.href = url; a.target='_blank'; a.rel='noopener'; a.className = 'd-btn'; a.textContent = (obj.text || 'Download'); mLinks.appendChild(a); });
+    }
+  }
+  modal.classList.add('show');
+}
+
+  
+(async function init(){
+  try{
+    const localMovies = await getMoviesFromDB();
+    if(localMovies && localMovies.length){
+      ensureIndexing(localMovies);
+      allMovies = localMovies.slice().sort((a,b)=> (b.releasedAt||0)-(a.releasedAt||0));
+      sortWithPinned(allMovies);
+      allMoviesMap = new Map(allMovies.map(m => [m.id, m]));
+      
+      if(indexWorker){
+        const payload = allMovies.map(it => ({ id: it.id, search: it._search || ((it.title||'')+' '+(it.subtitle||it.description||'')), releasedAt: it.releasedAt || 0, pinned: !!it.pinned }));
+        
+        const CHUNK = 2000;
+        for(let i=0;i<payload.length;i+=CHUNK){
+          const slice = payload.slice(i, i+CHUNK);
+          indexWorker.postMessage({ type: i===0 ? 'init' : 'index', items: slice });
+          await new Promise(res => setTimeout(res, 20));
+        }
+      }
+      filtered = allMovies; page = 1; lastRenderedCount = 0; render(); setupInfiniteScroll();
+    }
+  }catch(e){ console.warn('local DB load failed', e); }
+
+  await fetchMoviesFromServer();
+
+  window.addEventListener('focus', ()=> fetchMoviesFromServer());
+  setInterval(()=> fetchMoviesFromServer(), CONTINUOUS_REFRESH_MS);
+})();
+
+window.addEventListener('pagehide', ()=>{ /* Talha */ });
+
+
+function sortWithPinned(arr){
+  arr.sort((a,b)=>{
+    if(a.pinned && !b.pinned) return -1;
+    if(!a.pinned && b.pinned) return 1;
+    return (b.releasedAt||0) - (a.releasedAt||0);
+  });
+}
+
+
+  
+const tickerTrack = document.getElementById('tickerTrack');
+const tickerBox   = document.querySelector('.ticker-box');
+const TICKER_VISIBLE_MS = 5000;
+const TICKER_HIDDEN_MS  = 15000;
+const ONE_MONTH_MS = 100 * 24 * 60 * 60 * 1000;
+
+const TICKER_MIN_SECONDS = 30;      
+const TICKER_MAX_SECONDS = 500;     
+const TICKER_SECONDS_PER_CHAR = 0.28; 
+
+let tickerPrevMap = new Map();   
+let tickerChecksum = new Map();  
+window.__lastTickerLines = [];   
+
+(function loadTickerState(){
+  try{
+    const prevPairs = JSON.parse(localStorage.getItem('tickerPrevMapV1')||'[]');
+    prevPairs.forEach(([id, obj])=> tickerPrevMap.set(id, obj));
+    const savedLines = JSON.parse(localStorage.getItem('tickerLastLinesV1')||'[]');
+    if(savedLines.length){ window.__lastTickerLines = savedLines; renderTicker(savedLines); }
+  }catch(e){}
+})();
+
+function persistTickerState(){
+  try{
+    localStorage.setItem('tickerPrevMapV1', JSON.stringify(Array.from(tickerPrevMap.entries())));
+    localStorage.setItem('tickerLastLinesV1', JSON.stringify(window.__lastTickerLines||[]));
+  }catch(e){}
+}
+
+
+function normalizePureQualityText(t){
+  const s = String(t||'').toLowerCase().trim();
+  const m = s.match(/^(2160p|1440p|1080p|720p|480p|360p|4k|cam|webdl|hdrip|bluray|brrip)$/);
+  return m ? m[1] : null;
+}
+
+function inferTypeForTicker(item){
+  const tagStr = JSON.stringify(item.tags||[]).toLowerCase();
+  const explicit = (item.type||'').toLowerCase();
+  const hasEp = item.latestEpisode!=null || item.episode!=null || item.ep!=null || item.episodes!=null;
+  if(explicit==='series') return 'series';
+  if(explicit==='movie')  return 'movie';
+  if(tagStr.includes('series')||tagStr.includes('anime')||hasEp) return 'series';
+  return hasEp ? 'series' : 'movie';
+}
+function getEpisodeLabel(item){
+  let ep = item.latestEpisode ?? item.episode ?? item.ep ?? null;
+  if(ep==null && typeof item.episodes==='number') ep = item.episodes;
+  if(ep==null) return null;
+  const s = String(ep).trim();
+  const m = s.match(/s?(\d{1,2})e(\d{1,3})/i);
+  if(m) return `ep${m[2]}`;
+  const n = s.match(/(\d{1,3})/);
+  return n ? `ep${n[1]}` : s.toLowerCase();
+}
+function extractQualitiesAndTexts(item){
+  const Q = new Set();
+  const texts = new Set();
+  const pushQ=(q)=>{ if(!q) return; let s=String(q).toLowerCase();
+    const re=/(2160p|1440p|1080p|720p|480p|360p|4k|cam|webdl|hdrip|bluray|brrip)/g; let m;
+    while((m=re.exec(s))) Q.add(m[1]);
+  };
+  if(item.quality) pushQ(item.quality);
+  if(Array.isArray(item.qualities)) item.qualities.forEach(pushQ);
+  const links = Array.isArray(item.downloadLinks)? item.downloadLinks: [];
+  for(const l of links){
+    const txt = typeof l==='string' ? l : (l.text||l.label||l.title||'');
+    if(txt){ texts.add(txt.trim()); pushQ(txt); }
+  }
+  return {Q,texts};
+}
+
+
+
+function diffTicker(prev, cur){
+  const out = [];
+  const title = cur.title || 'Untitled';
+  const type = inferTypeForTicker(cur);
+
+  const pe = getEpisodeLabel(prev||{});
+  const ce = getEpisodeLabel(cur);
+
+  const parts = [];
+
+  if(type==='series' && ce && ce!==pe){
+    parts.push(`new ${ce}`);
+  }
+
+  const {Q: pQ, texts: pT} = extractQualitiesAndTexts(prev||{});
+  const {Q: cQ, texts: cT} = extractQualitiesAndTexts(cur||{});
+  const addedQ = [];
+  cQ.forEach(q=>{ if(!pQ.has(q)) addedQ.push(q); });
+  if(addedQ.length){
+    parts.push(addedQ.join(', '));
+  }
+
+  const addedTextRaw = [];
+  cT.forEach(t=>{
+    if(!pT.has(t)){
+      const pure = normalizePureQualityText(t);
+      if(pure && cQ.has(pure)) return; 
+      addedTextRaw.push(t);
+    }
+  });
+  if(addedTextRaw.length){
+    parts.push(addedTextRaw.map(t=>`"${t}"`).join(', '));
+  }
+
+  if(parts.length){
+    out.push(`${title} — ${parts.join(', ')} added`);
+  }
+  return out;
+}
+
+/* --- initial ticker lines for new items (edit: filter duplicates) --- */
+
+function buildTickerItemsLines(items){
+  const since = Date.now() - ONE_MONTH_MS;
+  const lines = [];
+  for(const cur of items){
+    const prev = tickerPrevMap.get(cur.id);
+    if(prev){
+      const diffs = diffTicker(prev, cur);
+      if(diffs.length) lines.push(...diffs);
+    }else{
+      const ts = Number(cur.updatedAt ?? cur.releasedAt ?? 0);
+      if(ts && ts >= since){
+        const parts = [];
+        const title = cur.title || 'Untitled';
+        const ep = getEpisodeLabel(cur);
+        if(inferTypeForTicker(cur)==='series' && ep) parts.push(`new ${ep}`);
+        const {Q, texts} = extractQualitiesAndTexts(cur);
+
+        if(Q.size) parts.push(Array.from(Q).join(', '));
+
+        const keptTexts = [];
+        texts.forEach(t=>{
+          const pure = normalizePureQualityText(t);
+          if(pure && Q.has(pure)) return; // skip duplicate pure quality text
+          keptTexts.push(t);
+        });
+        if(keptTexts.length) parts.push(keptTexts.map(t=>`"${t}"`).join(', '));
+
+        if(parts.length){
+          lines.push(`${title} — ${parts.join(', ')} added`);
+        }
+      }
+    }
+    tickerPrevMap.set(cur.id, cur);
+  }
+  
+  const seen = new Set();
+  const uniq = [];
+  for(const l of lines){
+    if(seen.has(l)) continue;
+    seen.add(l);
+    uniq.push(l);
+  }
+  return uniq;
+}
+
+/* ---------- rest of ticker + app code unchanged ---------- */
+
+let tickerRAF = null;
+let tickerPos = 0;
+let tickerSpeed = 70;
+
+function stopMarquee(){ if(tickerRAF){ cancelAnimationFrame(tickerRAF); tickerRAF=null; } }
+function startMarquee(){
+  stopMarquee();
+  if(!tickerTrack || !tickerBox) return;
+
+  const boxW = tickerBox.offsetWidth || 0;
+  const trackW = tickerTrack.scrollWidth || 0;
+
+  const chars = (tickerTrack.textContent||'').length || 1;
+  const durationTarget = clamp(
+    Math.round(chars * TICKER_SECONDS_PER_CHAR),
+    TICKER_MIN_SECONDS,
+    TICKER_MAX_SECONDS
+  );
+
+  tickerPos = boxW;
+  tickerSpeed = (boxW + trackW) / durationTarget;
+
+  let last = performance.now();
+  const tick = (now)=>{
+    const dt = (now - last) / 1000; last = now;
+    tickerPos -= tickerSpeed * dt;
+    if(tickerPos <= -trackW) tickerPos = boxW;
+    tickerTrack.style.transform = `translateX(${Math.floor(tickerPos)}px)`;
+    tickerRAF = requestAnimationFrame(tick);
+  };
+  tickerRAF = requestAnimationFrame(tick);
+}
+
+function renderTicker(lines){
+  if(!tickerTrack) return;
+  if(lines.length){
+    const html = lines.map(l=>`<span class="ticker-item">${l}</span><span class="ticker-dot">•</span>`).join('');
+    tickerTrack.innerHTML = html;
+    window.__lastTickerLines = lines;
+    persistTickerState();
+    startMarquee();
+  }else{
+    
+    if(!window.__lastTickerLines.length){
+      tickerTrack.innerHTML = `<span class="ticker-item">No updates yet</span>`;
+      startMarquee();
+    }
+  }
+}
+
+async function pullTickerOnce(){
+  const urls = DATA_SOURCES.map(u=> u + (u.includes('?')?'&':'?') + 't=' + Date.now());
+  const texts = await Promise.allSettled(urls.map(u=>fetch(u,{cache:'no-store'}).then(r=>r.text())));
+  let merged = [];
+  texts.forEach((res, i)=>{
+    if(res.status!=='fulfilled') return;
+    const txt = res.value || '';
+    const url = urls[i];
+    const h = fastHash(txt);
+    const prevH = tickerChecksum.get(url);
+    
+    
+    if(prevH && prevH===h && window.__lastTickerLines.length){ return; }
+    tickerChecksum.set(url, h);
+    try{
+      const json = JSON.parse(txt);
+      merged = merged.concat(normalizeSourceData(json));
+    }catch(e){}
+  });
+  if(!merged.length) return;
+
+  const list = mergeMoviesList(merged)
+    .sort((a,b)=>(Number(b.updatedAt||b.releasedAt||0)) - (Number(a.updatedAt||a.releasedAt||0)));
+  const lines = buildTickerItemsLines(list);
+
+  
+  if(lines.length){ renderTicker(lines); }
+}
+
+function startTickerPolling(){
+  if(window.__tickerInterval) clearInterval(window.__tickerInterval);
+  const ms = (document.visibilityState==='visible') ? TICKER_VISIBLE_MS : TICKER_HIDDEN_MS;
+  window.__tickerInterval = setInterval(pullTickerOnce, ms);
+}
+document.addEventListener('visibilitychange', startTickerPolling);
+
+
+window.addEventListener('resize', debounce(()=> {
+  startMarquee();
+}, 200));
+
+
+renderTicker(window.__lastTickerLines||[]);
+pullTickerOnce();
+startTickerPolling();
+
+
+</script>
+</body>
+</html>
