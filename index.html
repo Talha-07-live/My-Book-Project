@@ -227,9 +227,9 @@ html,body{height:100%;margin:0;font-family:Poppins, system-ui, -apple-system, Se
 <script type="module">
 
 const DATA_SOURCES = [
-  //'https://cdn.jsdelivr.net/gh/Talha-07-live/firebase-sync-data@main/data.json',
-  'https://data.talhascollection.xo.je/manifest.json',
   'https://data.talhascollection.xo.je/data.json',
+  'https://data.talhascollection.xo.je/manifest.json',
+  //'https://cdn.jsdelivr.net/gh/Talha-07-live/firebase-sync-data@main/data.json',
   //more Talha more
 ];
 
@@ -238,8 +238,8 @@ const BATCH_SIZE = 7;
 const FETCH_TIMEOUT = 12000;
 const MAX_CONCURRENCY = 3;
 const SAVE_CHUNK_SIZE = 800;
-const CONTINUOUS_REFRESH_MS = 30 * 60 * 1000;
-const MIN_RELOAD_GAP_MS = 45 * 1000;
+const CONTINUOUS_REFRESH_MS = 15 * 60 * 1000;
+const MIN_RELOAD_GAP_MS = 23 * 1000;
 
 
 
